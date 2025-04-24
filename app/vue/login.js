@@ -40,8 +40,8 @@ const app = new Vue({
         this.passwordError = '密码不能为空';
         return;
       }
-      if (this.password.length < 6) {
-        this.passwordError = '密码长度至少为6个字符';
+      if (this.password.length < 4) {
+        this.passwordError = '密码长度至少为4个字符';
       }
     },
     togglePasswordVisibility() {
@@ -68,7 +68,7 @@ const app = new Vue({
       
       // 模拟API调用
       setTimeout(() => {
-        const apiUrl = '/api/login';
+        const apiUrl = '/login';
         
         fetch(apiUrl, {
           method: 'POST',
@@ -89,8 +89,24 @@ const app = new Vue({
         })
         .then(data => {
           // 登录成功，重定向到首页或仪表盘
-          localStorage.setItem('token', data.token);
-          window.location.href = '/dashboard';
+          if (data.user) {
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('username', this.username);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            
+            if (this.rememberMe) {
+              localStorage.setItem('rememberMe', 'true');
+            } else {
+              localStorage.removeItem('rememberMe');
+            }
+            
+            // 重定向到首页或仪表板
+            window.location.href = '/dashboard';
+          } else {
+            // 处理响应成功但登录失败的情况
+            this.loginFailed = true;
+            this.loginErrorMessage = data.error || '登录失败，请重试。';
+          }
         })
         .catch(error => {
           // 登录失败，显示错误消息
