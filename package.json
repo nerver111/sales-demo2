@@ -6,12 +6,12 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@sap/cds": "^8",
-    "@sap/xsenv": "^3.4.0",
+    "@sap/cds": "^8.9.2",
+    "@sap/xsenv": "^5.5.0",
     "@sap/xssec": "^3.6.2",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "express": "^4",
-    "express-session": "^1.18.0",
+    "express-session": "^1.18.1",
     "passport": "^0.6.0",
     "sqlite3": "^5.1.7"
   },
