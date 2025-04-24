@@ -64,38 +64,44 @@ const app = new Vue({
       }
       
       // 显示加载状态
-      this.isLoading = true;
+      this.isLoggingIn = true;
       
-      try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1500));
+      // 模拟API调用
+      setTimeout(() => {
+        const apiUrl = '/api/login';
         
-        // 简单的演示登录逻辑 - 在实际应用中应该通过API验证
-        if (this.username === 'admin' && this.password === 'admin123') {
-          // 登录成功，保存登录状态并重定向
-          localStorage.setItem('isLoggedIn', 'true');
-          localStorage.setItem('username', this.username);
-          
-          if (this.rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
-          } else {
-            localStorage.removeItem('rememberMe');
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: this.username,
+            password: this.password,
+            rememberMe: this.rememberMe
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('登录失败');
           }
-          
-          // 重定向到主页或仪表板
-          window.location.href = 'dashboard.html';
-        } else {
-          // 登录失败
-          this.errors.general = '用户名或密码错误，请重试。';
-          this.showAlert = true;
-        }
-      } catch (error) {
-        console.error('登录时发生错误:', error);
-        this.errors.general = '登录过程中发生错误，请稍后重试。';
-        this.showAlert = true;
-      } finally {
-        this.isLoading = false;
-      }
+          return response.json();
+        })
+        .then(data => {
+          // 登录成功，重定向到首页或仪表盘
+          localStorage.setItem('token', data.token);
+          window.location.href = '/dashboard';
+        })
+        .catch(error => {
+          // 登录失败，显示错误消息
+          this.loginFailed = true;
+          this.loginErrorMessage = '用户名或密码不正确，请重试。';
+          console.error('登录错误:', error);
+        })
+        .finally(() => {
+          this.isLoggingIn = false;
+        });
+      }, 1000); // 模拟网络延迟
     },
     checkPreviousLogin() {
       // 检查用户是否已经登录
