@@ -12,7 +12,7 @@ const { exec } = require('child_process');
 console.log('开始初始化数据库...');
 
 // 清理旧数据库文件
-exec('rm -f db.sqlite', (error) => {
+exec('rm -f sqlite.db', (error) => {
   if (error) {
     console.log('警告: 无法删除旧数据库文件 (可能不存在)');
   } else {
@@ -23,7 +23,7 @@ exec('rm -f db.sqlite', (error) => {
   console.log('正在部署数据库模型...');
   
   // 使用CDS部署命令创建数据库并加载初始数据
-  exec('cds deploy --to sqlite:db.sqlite --with-mocks', (error, stdout, stderr) => {
+  exec('cds deploy --to sqlite --with-mocks', (error, stdout, stderr) => {
     if (error) {
       console.error(`部署出错: ${error.message}`);
       return;
