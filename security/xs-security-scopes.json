@@ -1,0 +1,86 @@
+{
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.viewer",
+      "description": "查看销售计划"
+    },
+    {
+      "name": "$XSAPPNAME.editor",
+      "description": "编辑销售计划"
+    },
+    {
+      "name": "$XSAPPNAME.admin",
+      "description": "管理员权限"
+    }
+  ],
+  "attributes": [
+    {
+      "name": "region",
+      "description": "区域",
+      "valueRequired": false
+    },
+    {
+      "name": "department",
+      "description": "部门",
+      "valueRequired": false
+    }
+  ],
+  "attributeMappings": [
+    {
+      "attributeName": "region",
+      "attributeSource": {
+        "entityType": "User", 
+        "attributeName": "region"
+      }
+    },
+    {
+      "attributeName": "department",
+      "attributeSource": {
+        "entityType": "User", 
+        "attributeName": "department"
+      }
+    }
+  ],
+  "roleTemplates": [
+    {
+      "name": "SalesViewer",
+      "description": "查看销售计划",
+      "scopeReferences": [
+        "$XSAPPNAME.viewer"
+      ],
+      "attributeReferences": [
+        {
+          "name": "region"
+        },
+        {
+          "name": "department"
+        }
+      ]
+    },
+    {
+      "name": "SalesEditor",
+      "description": "编辑销售计划",
+      "scopeReferences": [
+        "$XSAPPNAME.viewer",
+        "$XSAPPNAME.editor"
+      ],
+      "attributeReferences": [
+        {
+          "name": "region"
+        },
+        {
+          "name": "department"
+        }
+      ]
+    },
+    {
+      "name": "SalesAdmin",
+      "description": "管理销售计划",
+      "scopeReferences": [
+        "$XSAPPNAME.viewer",
+        "$XSAPPNAME.editor",
+        "$XSAPPNAME.admin"
+      ]
+    }
+  ]
+} 

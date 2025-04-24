@@ -1,0 +1,62 @@
+{
+  "name": "sales-plan-app",
+  "version": "1.0.0",
+  "description": "销售计划管理应用",
+  "repository": "<请添加您的仓库地址>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^8.9.2",
+    "@sap/xssec": "^3",
+    "express": "^4",
+    "passport": "^0.6.0",
+    "sqlite3": "^5.1.7"
+  },
+  "scripts": {
+    "start": "cds run"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite"
+      },
+      "auth": {
+        "kind": "xsuaa",
+        "users": {
+          "alice": {
+            "password": "pass",
+            "roles": [
+              "viewer",
+              "editor",
+              "admin"
+            ]
+          },
+          "bob": {
+            "password": "pass",
+            "roles": [
+              "viewer",
+              "editor"
+            ],
+            "attr": {
+              "region": "东区",
+              "department": "销售部"
+            }
+          },
+          "charlie": {
+            "password": "pass",
+            "roles": [
+              "viewer"
+            ],
+            "attr": {
+              "region": "西区",
+              "department": "市场部"
+            }
+          }
+        }
+      },
+      "uaa": {
+        "kind": "xsuaa-service"
+      }
+    }
+  }
+}

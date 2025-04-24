@@ -1,0 +1,7 @@
+ID,userId,salesPlan_ID,accessLevel
+96c8ca7b-4f3a-4a3b-88cc-90633ab666c0,alice,1,edit
+a792344b-f82d-48be-9e6f-cd8dba09301c,bob,1,read
+b15c8d25-7e3a-4c78-941a-5cb3b2f3d4e1,alice,2,edit
+c67d4e89-f25a-4d2b-a9c3-6e7f8a1b2c3d,charlie,2,read
+d98e5f12-a34b-5c67-d89e-0f1a2b3c4d5e,bob,3,edit
+e23f6g78-h56i-7j8k-l90m-1n2o3p4q5r6s,alice,3,read

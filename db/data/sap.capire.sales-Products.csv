@@ -1,0 +1,11 @@
+ID,name,description,price,currency_code,category,sku,stock,unit,imageUrl
+1,"智能手机X1","高性能智能手机，6.5英寸屏幕，256GB存储",5999.00,"CNY","电子产品","SP-X1-256",120,"台","products/phone-x1.jpg"
+2,"超薄笔记本Pro","13英寸超薄笔记本，16GB内存，512GB SSD",8999.00,"CNY","电子产品","LT-PRO-512",85,"台","products/laptop-pro.jpg"
+3,"无线蓝牙耳机","降噪立体声蓝牙耳机",599.00,"CNY","配件","BT-E100",350,"个","products/bt-headphones.jpg"
+4,"智能手表","多功能智能手表，支持心率监测",1299.00,"CNY","穿戴设备","SW-100",200,"个","products/smartwatch.jpg"
+5,"便携充电宝","20000mAh大容量，快充",199.00,"CNY","配件","PB-20K",500,"个","products/powerbank.jpg"
+6,"4K高清摄像机","专业级4K摄像，光学变焦",4599.00,"CNY","影音设备","CM-4K-PRO",60,"台","products/camera-4k.jpg"
+7,"智能音箱","AI语音助手，360°环绕音效",899.00,"CNY","影音设备","SP-AI-360",150,"个","products/smart-speaker.jpg"
+8,"游戏手柄","多平台兼容，人体工学设计",329.00,"CNY","配件","GC-MP-01",180,"个","products/gamepad.jpg"
+9,"平板电脑Air","10.5英寸屏幕，128GB存储",3699.00,"CNY","电子产品","TB-AIR-128",95,"台","products/tablet-air.jpg"
+10,"VR眼镜","沉浸式游戏体验，高清显示",2999.00,"CNY","穿戴设备","VR-G200",40,"个","products/vr-glasses.jpg" 

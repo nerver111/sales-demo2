@@ -1,0 +1,87 @@
+{
+  "xsappname": "sales-plan-app",
+  "tenant-mode": "dedicated",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.viewer",
+      "description": "查看销售计划"
+    },
+    {
+      "name": "$XSAPPNAME.editor",
+      "description": "编辑销售计划"
+    },
+    {
+      "name": "$XSAPPNAME.admin",
+      "description": "管理员权限"
+    }
+  ],
+  "attributes": [
+    {
+      "name": "region",
+      "description": "区域",
+      "valueType": "string"
+    },
+    {
+      "name": "department",
+      "description": "部门",
+      "valueType": "string"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "SalesViewer",
+      "description": "销售计划查看者",
+      "scope-references": [
+        "$XSAPPNAME.viewer"
+      ],
+      "attribute-references": [
+        "region",
+        "department"
+      ]
+    },
+    {
+      "name": "SalesEditor",
+      "description": "销售计划编辑者",
+      "scope-references": [
+        "$XSAPPNAME.viewer",
+        "$XSAPPNAME.editor"
+      ],
+      "attribute-references": [
+        "region",
+        "department"
+      ]
+    },
+    {
+      "name": "SalesAdmin",
+      "description": "销售计划管理员",
+      "scope-references": [
+        "$XSAPPNAME.viewer",
+        "$XSAPPNAME.editor",
+        "$XSAPPNAME.admin"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "SalesViewerCollection",
+      "description": "销售计划查看者",
+      "role-template-references": [
+        "$XSAPPNAME.SalesViewer"
+      ]
+    },
+    {
+      "name": "SalesEditorCollection",
+      "description": "销售计划编辑者",
+      "role-template-references": [
+        "$XSAPPNAME.SalesEditor"
+      ]
+    },
+    {
+      "name": "SalesAdminCollection",
+      "description": "销售计划管理员",
+      "role-template-references": [
+        "$XSAPPNAME.SalesAdmin"
+      ]
+    }
+  ]
+} 

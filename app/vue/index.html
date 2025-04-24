@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>销售计划管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/primitive-ui/dist/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        .hovering tr:hover td { color:cyan; background: #123; cursor: pointer; }
+        .status-draft { color: #999; }
+        .status-inProgress { color: #2196F3; }
+        .status-completed { color: #4CAF50; }
+        .status-cancelled { color: #F44336; }
+        .succeeded { color: #4CAF50; }
+        .failed { color: #F44336; }
+        .user { text-align: end; color: grey; }
+        .back-button { margin-bottom: 20px; }
+        .action-buttons { margin-top: 10px; display: flex; gap: 10px; }
+        .tabs { margin-bottom: 20px; }
+        .tabs button { margin-right: 10px; }
+        .tabs button.active { background-color: #2196F3; color: white; }
+        .plan-items { margin-top: 20px; }
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .dialog-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .dialog-header h3 {
+            margin: 0;
+        }
+        .close-button {
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+        }
+        .currency-positive { color: #4CAF50; }
+        .currency-negative { color: #F44336; }
+        .item-row { border-bottom: 1px solid #eee; padding: 8px 0; }
+        .remove-button { color: #F44336; cursor: pointer; }
+    </style>
+</head>
+
+<body class="small-container", style="margin-top: 70px;">
+<div id='app'>
+
+    <form class="user" @submit.prevent="login">
+        <div v-if="user">
+            <div v-if="user.tenant">用户: {{ user.tenant }}</div>
+            <div>用户ID: {{ user.id }}</div>
+            <div>语言环境: {{ user.locale }}</div>
+        </div>
+        <div v-else>
+            <input type="submit" value="登录" class="muted-button">
+        </div>
+    </form>
+
+    <h1>销售管理系统</h1>
+
+    <!-- 标签页切换 -->
+    <div class="tabs">
+        <button :class="{ active: activeTab === 'plans' }" @click="switchTab('plans')">销售计划</button>
+        <button :class="{ active: activeTab === 'products' }" @click="switchTab('products')">商品管理</button>
+    </div>
+
+    <!-- 销售计划列表 -->
+    <div v-if="activeTab === 'plans' && !plan && !editMode && !createMode">
+        <input type="text" placeholder="搜索..." @input="search">
+        <button class="button" @click="startCreate">新建销售计划</button>
+
+        <table id='salesPlans' class="hovering">
+            <thead>
+                <th>编号</th>
+                <th>标题</th>
+                <th>开始日期</th>
+                <th>结束日期</th>
+                <th>目标销量</th>
+                <th>单位</th>
+                <th>状态</th>
+            </thead>
+            <tr v-for="plan in list" v-bind:id="plan.ID" v-on:click="inspect">
+                <td>{{ plan.ID }}</td>
+                <td>{{ plan.title }}</td>
+                <td>{{ formatDate(plan.startDate) }}</td>
+                <td>{{ formatDate(plan.endDate) }}</td>
+                <td>{{ plan.targetAmount }}</td>
+                <td>{{ plan.unit }}</td>
+                <td :class="'status-'+plan.status">{{ getStatusText(plan.status) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 商品列表 -->
+    <div v-if="activeTab === 'products' && !product && !productEditMode && !productCreateMode">
+        <input type="text" placeholder="搜索..." @input="search">
+        <button class="button" @click="startCreateProduct">新建商品</button>
+
+        <table id='productList' class="hovering">
+            <thead>
+                <th>编号</th>
+                <th>商品名称</th>
+                <th>类别</th>
+                <th>价格</th>
+                <th>库存</th>
+                <th>单位</th>
+            </thead>
+            <tr v-for="product in productList" v-bind:id="product.ID" v-on:click="inspectProduct">
+                <td>{{ product.ID }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category }}</td>
+                <td>{{ formatCurrency(product.price, product.currency_code) }}</td>
+                <td>{{ product.stock }}</td>
+                <td>{{ product.unit }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 销售计划详情查看页面 -->
+    <div v-if="plan && !editMode && !createMode">
+        <button class="back-button" @click="back">返回列表</button>
+        
+        <div class="action-buttons">
+            <button class="button" @click="startEdit">编辑</button>
+            <button class="button" @click="completePlan" v-if="plan.status !== 'completed' && plan.status !== 'cancelled'">
+                标记为已完成
+            </button>
+            <button class="button muted-button" @click="cancelPlan" v-if="plan.status !== 'completed' && plan.status !== 'cancelled'">
+                取消计划
+            </button>
+        </div>
+
+        <h2>{{ plan.title }}</h2>
+        <div class="message" v-if="message">
+            <p class="succeeded">{{ message.success }}</p>
+            <p class="failed">{{ message.error }}</p>
+        </div>
+
+        <div class="grid">
+            <div>
+                <h4>基本信息</h4>
+                <p><strong>编号：</strong>{{ plan.ID }}</p>
+                <p><strong>标题：</strong>{{ plan.title }}</p>
+                <p><strong>开始日期：</strong>{{ formatDate(plan.startDate) }}</p>
+                <p><strong>结束日期：</strong>{{ formatDate(plan.endDate) }}</p>
+                <p><strong>状态：</strong><span :class="'status-'+plan.status">{{ getStatusText(plan.status) }}</span></p>
+            </div>
+            <div>
+                <h4>详细信息</h4>
+                <p><strong>描述：</strong>{{ plan.description }}</p>
+                <p><strong>目标销量：</strong>{{ plan.targetAmount }} {{ plan.unit }}</p>
+                <p><strong>负责人：</strong>{{ plan.responsiblePerson }}</p>
+                <p><strong>备注：</strong>{{ plan.remarks }}</p>
+            </div>
+        </div>
+        
+        <!-- 计划商品列表 -->
+        <div class="plan-items">
+            <div class="grid">
+                <div>
+                    <h4>计划商品</h4>
+                </div>
+                <div>
+                    <button class="button" @click="openItemDialog" v-if="plan.status !== 'completed' && plan.status !== 'cancelled'">添加商品</button>
+                </div>
+            </div>
+            
+            <table v-if="planItems.length > 0">
+                <thead>
+                    <th>商品名称</th>
+                    <th>数量</th>
+                    <th>单价</th>
+                    <th>折扣</th>
+                    <th>折后价</th>
+                    <th>小计</th>
+                    <th>备注</th>
+                    <th v-if="plan.status !== 'completed' && plan.status !== 'cancelled'">操作</th>
+                </thead>
+                <tr v-for="item in planItems">
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }} {{ item.product.unit }}</td>
+                    <td>{{ formatCurrency(item.targetPrice, item.product.currency_code) }}</td>
+                    <td>{{ item.discount }}%</td>
+                    <td>{{ formatCurrency(getDiscountedPrice(item.targetPrice, item.discount), item.product.currency_code) }}</td>
+                    <td>{{ formatCurrency(getDiscountedPrice(item.targetPrice, item.discount) * item.quantity, item.product.currency_code) }}</td>
+                    <td>{{ item.notes }}</td>
+                    <td v-if="plan.status !== 'completed' && plan.status !== 'cancelled'">
+                        <span class="remove-button" @click="removeProductFromPlan(item.ID)">移除</span>
+                    </td>
+                </tr>
+            </table>
+            <div v-else>
+                <p>暂无商品添加到此计划</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品详情查看页面 -->
+    <div v-if="product && !productEditMode && !productCreateMode">
+        <button class="back-button" @click="back">返回列表</button>
+        
+        <div class="action-buttons">
+            <button class="button" @click="startEditProduct">编辑</button>
+        </div>
+
+        <h2>{{ product.name }}</h2>
+        <div class="message" v-if="message">
+            <p class="succeeded">{{ message.success }}</p>
+            <p class="failed">{{ message.error }}</p>
+        </div>
+
+        <div class="grid">
+            <div>
+                <h4>基本信息</h4>
+                <p><strong>编号：</strong>{{ product.ID }}</p>
+                <p><strong>商品名称：</strong>{{ product.name }}</p>
+                <p><strong>类别：</strong>{{ product.category }}</p>
+                <p><strong>价格：</strong>{{ formatCurrency(product.price, product.currency_code) }}</p>
+                <p><strong>SKU：</strong>{{ product.sku }}</p>
+            </div>
+            <div>
+                <h4>详细信息</h4>
+                <p><strong>描述：</strong>{{ product.description }}</p>
+                <p><strong>库存：</strong>{{ product.stock }} {{ product.unit }}</p>
+                <p v-if="product.imageUrl"><strong>图片：</strong>{{ product.imageUrl }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 销售计划编辑页面 -->
+    <div v-if="(editMode || createMode) && formData">
+        <button class="back-button" @click="back">取消</button>
+        <h2>{{ editMode ? '编辑销售计划' : '新建销售计划' }}</h2>
+
+        <form @submit.prevent="savePlan">
+            <div class="grid">
+                <div>
+                    <label for="title">标题</label>
+                    <input type="text" id="title" v-model="formData.title" required>
+                    
+                    <label for="description">描述</label>
+                    <textarea id="description" v-model="formData.description" rows="3"></textarea>
+                    
+                    <label for="startDate">开始日期</label>
+                    <input type="date" id="startDate" v-model="formData.startDate" required>
+                    
+                    <label for="endDate">结束日期</label>
+                    <input type="date" id="endDate" v-model="formData.endDate" required>
+                </div>
+                <div>
+                    <label for="targetAmount">目标销量</label>
+                    <input type="number" id="targetAmount" v-model="formData.targetAmount" step="0.01" required>
+                    
+                    <label for="unit">单位</label>
+                    <input type="text" id="unit" v-model="formData.unit" maxlength="3" required>
+                    
+                    <label for="responsiblePerson">负责人</label>
+                    <input type="text" id="responsiblePerson" v-model="formData.responsiblePerson">
+                    
+                    <label for="remarks">备注</label>
+                    <textarea id="remarks" v-model="formData.remarks" rows="3"></textarea>
+                </div>
+            </div>
+            
+            <button type="submit" class="button">保存</button>
+        </form>
+    </div>
+    
+    <!-- 商品编辑页面 -->
+    <div v-if="(productEditMode || productCreateMode) && productFormData">
+        <button class="back-button" @click="back">取消</button>
+        <h2>{{ productEditMode ? '编辑商品' : '新建商品' }}</h2>
+
+        <form @submit.prevent="saveProduct">
+            <div class="grid">
+                <div>
+                    <label for="name">商品名称</label>
+                    <input type="text" id="name" v-model="productFormData.name" required>
+                    
+                    <label for="description">描述</label>
+                    <textarea id="description" v-model="productFormData.description" rows="3"></textarea>
+                    
+                    <label for="price">价格</label>
+                    <input type="number" id="price" v-model="productFormData.price" step="0.01" required>
+                    
+                    <label for="currency_code">货币</label>
+                    <select id="currency_code" v-model="productFormData.currency_code">
+                        <option value="CNY">人民币 (CNY)</option>
+                        <option value="USD">美元 (USD)</option>
+                        <option value="EUR">欧元 (EUR)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="category">类别</label>
+                    <input type="text" id="category" v-model="productFormData.category">
+                    
+                    <label for="sku">SKU</label>
+                    <input type="text" id="sku" v-model="productFormData.sku">
+                    
+                    <label for="stock">库存</label>
+                    <input type="number" id="stock" v-model="productFormData.stock" required>
+                    
+                    <label for="unit">单位</label>
+                    <input type="text" id="unit" v-model="productFormData.unit" required>
+                    
+                    <label for="imageUrl">图片URL</label>
+                    <input type="text" id="imageUrl" v-model="productFormData.imageUrl">
+                </div>
+            </div>
+            
+            <button type="submit" class="button">保存</button>
+        </form>
+    </div>
+    
+    <!-- 添加商品到计划的对话框 -->
+    <div v-if="itemDialogOpen" class="dialog-overlay">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>添加商品到销售计划</h3>
+                <span class="close-button" @click="closeItemDialog">&times;</span>
+            </div>
+            
+            <form @submit.prevent="addProductToPlan">
+                <label for="product">选择商品</label>
+                <select id="product" v-model="selectedProductId" @change="updatePriceFromProduct" required>
+                    <option value="">-- 请选择商品 --</option>
+                    <option v-for="product in productList" :value="product.ID">
+                        {{ product.name }} ({{ formatCurrency(product.price, product.currency_code) }})
+                    </option>
+                </select>
+                
+                <label for="quantity">数量</label>
+                <input type="number" id="quantity" v-model="itemFormData.quantity" min="1" required>
+                
+                <label for="targetPrice">目标售价</label>
+                <input type="number" id="targetPrice" v-model="itemFormData.targetPrice" step="0.01" required>
+                
+                <label for="discount">折扣 (%)</label>
+                <input type="number" id="discount" v-model="itemFormData.discount" min="0" max="100" step="0.01">
+                
+                <label for="notes">备注</label>
+                <textarea id="notes" v-model="itemFormData.notes" rows="2"></textarea>
+                
+                <div class="action-buttons">
+                    <button type="submit" class="button">添加</button>
+                    <button type="button" class="button muted-button" @click="closeItemDialog">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+
+<script src="app.js"></script>
+</html> 

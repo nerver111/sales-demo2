@@ -1,0 +1,29 @@
+{
+    "VCAP_SERVICES": {
+      "xsuaa": [
+        {
+          "binding_name": null,
+          "credentials": {
+            "apiurl": "https://api.authentication.ap21.hana.ondemand.com",
+            "clientid": "sb-sales-plan-app!t62802",
+            "clientsecret": "494d84f0-5ca6-4c14-be3b-6c41f7c9fa80$KN5V6xImGDm8MUjrkLPBen_Fkt5QzbXLblixwT3kanQ=",
+            "identityzone": "f4a60f93trial",
+            "tenantid": "377277a3-0e38-4219-8c63-12f514e5a58e",
+            "tenantmode": "dedicated",
+            "uaadomain": "authentication.ap21.hana.ondemand.com",
+            "url": "https://f4a60f93trial.authentication.ap21.hana.ondemand.com",
+            "verificationkey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0smZ2x5LZ+BynZMEN5S3\nb4IJlOahnJPUsafCiw8Ee9II5fRacmf/eNPcOcLUZtbGemLGFM73I8E29rEjDmeO\nycvmakNUbSixerWuTDpj2HketSEiyolGSouiaHlHY1KD6OlKp625WNtksMLBaUPT\nsgtWsXxFr5TCk8zhsKE/Uq3zId2Rf/eCY0Bbbb/qhAwYCJm0CKk3t+VlKAKyyRO9\nb5BolFSzFoRoGZvVHTE+31/LVRnZodI3QW31wEDRoxVVgktdZdlfwZvXm9yNC1Sg\n05jZdLNeAk7MLfOEw6rJObXAoYeK/5NeJ/OrIBZAIPHXHVM5B9tVMnXu4RepzYbS\n0QIDAQAB\n-----END PUBLIC KEY-----",
+            "xsappname": "sales-plan-app!t62802"
+          },
+          "instance_name": "XSUAA-demo",
+          "label": "xsuaa",
+          "plan": "application",
+          "provider": null,
+          "syslog_drain_url": null,
+          "tags": [
+            "xsuaa"
+          ]
+        }
+      ]
+    }
+  }
