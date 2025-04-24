@@ -1,0 +1,46 @@
+{
+    "VCAP_SERVICES": {
+      "xsuaa": [
+        {
+          "binding_name": null,
+          "credentials": {
+            "apiurl": "https://api.authentication.sap.hana.ondemand.com",
+            "clientid": "sb-sales-app-dev",
+            "clientsecret": "placeholder-secret",
+            "identityzone": "your-subaccount",
+            "identityzoneid": "your-subaccount-id",
+            "sburl": "https://internal-xsuaa.authentication.sap.hana.ondemand.com",
+            "tenantid": "your-tenant-id",
+            "tenantmode": "dedicated",
+            "uaadomain": "authentication.sap.hana.ondemand.com",
+            "url": "https://your-subaccount.authentication.sap.hana.ondemand.com",
+            "verificationkey": "placeholder-key",
+            "xsappname": "sales-app-dev"
+          },
+          "instance_name": "sales-app-xsuaa",
+          "label": "xsuaa",
+          "name": "sales-app-xsuaa",
+          "plan": "application",
+          "provider": null,
+          "syslog_drain_url": null,
+          "tags": [
+            "xsuaa"
+          ],
+          "volume_mounts": []
+        }
+      ]
+    },
+    "VCAP_APPLICATION": {
+      "application_id": "sales-app-dev",
+      "application_name": "sales-app",
+      "application_uris": [
+        "sales-app-dev.cfapps.sap.hana.ondemand.com"
+      ],
+      "cf_api": "https://api.cf.sap.hana.ondemand.com",
+      "name": "sales-app",
+      "organization_id": "your-org-id",
+      "organization_name": "your-org-name",
+      "space_id": "your-space-id",
+      "space_name": "dev"
+    }
+  }

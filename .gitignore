@@ -14,6 +14,8 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+# 允许default-env.json用于BAS环境
+# default-env.json
 
 # Build directories
 dist/
@@ -31,4 +33,4 @@ out/
 Thumbs.db
 
 # SAP specific
-default-env.json 
+# default-env.json 已注释掉，使其可被版本控制 
