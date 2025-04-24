@@ -9,7 +9,9 @@
     "@sap/cds": "^8.9.2",
     "@sap/xsenv": "^5.5.0",
     "@sap/xssec": "^3.6.2",
+    "body-parser": "^2.2.0",
     "express": "^4",
+    "express-session": "^1.18.1",
     "passport": "^0.6.0",
     "sqlite3": "^5.1.7"
   },
