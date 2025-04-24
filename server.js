@@ -1,42 +1,53 @@
 // 加载环境变量和XSUAA配置
 const xsenv = require('@sap/xsenv');
 
+// 确保加载环境变量
 try {
-  // 尝试加载XSUAA服务配置
   xsenv.loadEnv();
-  // 安全地获取XSUAA服务实例
-  const services = xsenv.getServices({
-    xsuaa: { tag: 'xsuaa' }
-  });
-  console.log('已找到XSUAA服务配置');
 } catch (err) {
-  console.log('未找到XSUAA服务配置，将使用mock认证:', err.message);
+  console.log('无法加载.env文件，将使用默认环境变量');
 }
 
 // 加载CDS应用
 const cds = require('@sap/cds');
 
-// 判断环境类型，确定认证策略
-const isProductionEnv = process.env.NODE_ENV === 'production';
-const isCloudFoundry = process.env.VCAP_APPLICATION ? true : false;
+// 强制使用指定的auth实现
+cds.env.requires = cds.env.requires || {};
+cds.env.requires.auth = {
+  kind: 'xsuaa',
+  impl: '@sap/cds/lib/srv/auth/passport'  // 明确指定使用passport实现XSUAA认证
+};
 
-// 根据环境选择认证方式
-if (isCloudFoundry) {
-  // Cloud Foundry环境，使用XSUAA
-  console.log('运行在Cloud Foundry环境，使用XSUAA认证');
-  // XSUAA配置已在package.json中设置为 { "kind": "xsuaa" }
-} else {
-  // 本地开发环境，使用mock认证
-  console.log('运行在本地环境，使用mock认证');
-  cds.env.requires.auth = { 
-    kind: 'mock',
-    impl: '@sap/cds/lib/srv/auth/mock'
-  };
-}
+console.log('已配置XSUAA认证');
 
 // 启动CDS服务
 cds.on('bootstrap', app => {
-  console.log('服务器启动中，已加载认证配置...');
+  console.log('服务器启动中，认证配置已应用...');
+  
+  // 注册Passport认证中间件
+  const passport = require('passport');
+  const xssec = require('@sap/xssec');
+  const JWTStrategy = xssec.JWTStrategy;
+  
+  // 从环境变量中获取XSUAA服务配置
+  let xsuaaService = null;
+  try {
+    xsuaaService = xsenv.getServices({ xsuaa: {tag: 'xsuaa'} }).xsuaa;
+    console.log('成功获取XSUAA服务配置');
+  } catch (err) {
+    console.log('无法获取XSUAA服务配置，将使用mock配置');
+    // 创建一个模拟的XSUAA服务以避免启动错误
+    xsuaaService = {
+      uaadomain: 'localhost',
+      clientid: 'mock-client',
+      clientsecret: 'mock-secret',
+      url: 'http://localhost'
+    };
+  }
+  
+  // 配置Passport
+  passport.use(new JWTStrategy(xsuaaService));
+  app.use(passport.initialize());
 });
 
 module.exports = cds.server; 

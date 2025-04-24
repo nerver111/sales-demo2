@@ -25,43 +25,7 @@
         "kind": "sqlite"
       },
       "auth": {
-        "[production]": {
-          "kind": "xsuaa"
-        },
-        "[development]": {
-          "kind": "mock",
-          "users": {
-            "alice": {
-              "password": "pass",
-              "roles": [
-                "viewer",
-                "editor",
-                "admin"
-              ]
-            },
-            "bob": {
-              "password": "pass",
-              "roles": [
-                "viewer",
-                "editor"
-              ],
-              "attr": {
-                "region": "东区",
-                "department": "销售部"
-              }
-            },
-            "charlie": {
-              "password": "pass",
-              "roles": [
-                "viewer"
-              ],
-              "attr": {
-                "region": "西区",
-                "department": "市场部"
-              }
-            }
-          }
-        }
+        "kind": "xsuaa"
       }
     }
   }
