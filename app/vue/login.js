@@ -40,8 +40,8 @@ const app = new Vue({
         this.passwordError = '密码不能为空';
         return;
       }
-      if (this.password.length < 6) {
-        this.passwordError = '密码长度至少为6个字符';
+      if (this.password.length < 4) {
+        this.passwordError = '密码长度至少为4个字符';
       }
     },
     togglePasswordVisibility() {
