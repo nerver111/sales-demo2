@@ -20,16 +20,28 @@
     "start:prod": "NODE_ENV=production cds run",
     "start:noauth": "cds run --no-auth",
     "watch": "cds watch --no-auth",
-    "watch:with-auth": "cds watch"
+    "watch:with-auth": "cds watch",
+    "deploy": "cds deploy --to sqlite:db.sqlite",
+    "init": "cds deploy --to sqlite:db.sqlite --with-mocks"
   },
   "cds": {
     "requires": {
       "db": {
-        "kind": "sqlite"
+        "kind": "sqlite",
+        "impl": "cds-sqlite",
+        "model": [
+          "db"
+        ],
+        "credentials": {
+          "url": "db.sqlite"
+        }
       },
       "auth": {
         "kind": "xsuaa"
       }
+    },
+    "features": {
+      "mocked_bindings": true
     }
   }
 }
