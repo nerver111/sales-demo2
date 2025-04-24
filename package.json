@@ -7,13 +7,15 @@
   "private": true,
   "dependencies": {
     "@sap/cds": "^8.9.2",
+    "@sap/xsenv": "^5.5.0",
     "@sap/xssec": "^3",
     "express": "^4",
     "passport": "^0.6.0",
     "sqlite3": "^5.1.7"
   },
   "scripts": {
-    "start": "cds run"
+    "start": "cds run",
+    "start:mock": "cds run --with-mocks"
   },
   "cds": {
     "requires": {
@@ -21,7 +23,7 @@
         "kind": "sqlite"
       },
       "auth": {
-        "kind": "xsuaa",
+        "kind": "mock",
         "users": {
           "alice": {
             "password": "pass",
@@ -53,9 +55,6 @@
             }
           }
         }
-      },
-      "uaa": {
-        "kind": "xsuaa-service"
       }
     }
   }
