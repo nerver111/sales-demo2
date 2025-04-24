@@ -17,7 +17,8 @@
     "start": "cds run",
     "start:mock": "cds run --with-mocks",
     "start:local": "NODE_ENV=local cds run",
-    "start:prod": "NODE_ENV=production cds run"
+    "start:prod": "NODE_ENV=production cds run",
+    "start:noauth": "cds run --no-auth"
   },
   "cds": {
     "requires": {
