@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售管理系统 - 登录</title>
+    <link rel="stylesheet" href="../vue/login.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>销售管理系统</h1>
+                    <p>请登录您的账户</p>
+                </div>
+                
+                <!-- 登录失败提示 -->
+                <div v-if="loginFailed" class="alert alert-danger">
+                    <span>{{ loginErrorMessage }}</span>
+                    <button type="button" class="close-btn" @click="closeAlert">×</button>
+                </div>
+                
+                <form @submit.prevent="login" class="login-form">
+                    <!-- 用户名输入 -->
+                    <div class="form-group" :class="{ 'has-error': usernameError }">
+                        <label for="username">用户名</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            v-model="username" 
+                            @blur="validateUsername"
+                            placeholder="请输入用户名"
+                            autocomplete="username">
+                        <div v-if="usernameError" class="error-message">{{ usernameError }}</div>
+                    </div>
+                    
+                    <!-- 密码输入 -->
+                    <div class="form-group" :class="{ 'has-error': passwordError }">
+                        <label for="password">密码</label>
+                        <div class="password-input-container">
+                            <input 
+                                :type="showPassword ? 'text' : 'password'" 
+                                id="password" 
+                                v-model="password" 
+                                @blur="validatePassword"
+                                placeholder="请输入密码"
+                                autocomplete="current-password">
+                            <button 
+                                type="button" 
+                                class="password-toggle" 
+                                @click="togglePasswordVisibility">
+                                {{ showPassword ? '隐藏' : '显示' }}
+                            </button>
+                        </div>
+                        <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
+                    </div>
+                    
+                    <!-- 记住我和忘记密码 -->
+                    <div class="form-actions">
+                        <div class="remember-me">
+                            <input type="checkbox" id="remember" v-model="rememberMe">
+                            <label for="remember">记住我</label>
+                        </div>
+                        <a href="/forgot-password" class="forgot-password">忘记密码?</a>
+                    </div>
+                    
+                    <!-- 登录按钮 -->
+                    <button 
+                        type="submit" 
+                        class="login-button" 
+                        :disabled="!formIsValid || isLoggingIn">
+                        <span v-if="!isLoggingIn">登录</span>
+                        <span v-else class="spinner"></span>
+                    </button>
+                </form>
+                
+                <div class="login-footer">
+                    <p>&copy; 2023 销售管理系统 版权所有</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../vue/login.js"></script>
+</body>
+</html> 

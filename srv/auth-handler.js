@@ -1,7 +1,182 @@
 /**
  * 销售计划应用程序的认证和授权处理器
  */
+const cds = require('@sap/cds');
+const xsenv = require('@sap/xsenv');
+const { JWTStrategy } = require('@sap/xssec');
+const passport = require('passport');
+
+// 获取XSUAA配置
+let xsuaaService;
+try {
+  xsuaaService = xsenv.getServices({ xsuaa: { tag: 'xsuaa' } }).xsuaa;
+  console.log('已加载XSUAA服务配置');
+} catch (err) {
+  console.warn('未找到XSUAA服务配置，使用默认值');
+  xsuaaService = {
+    xsappname: 'sales-app',
+    clientid: 'default-client',
+    clientsecret: 'default-secret',
+    url: 'http://localhost:4004'
+  };
+}
+
+/**
+ * 初始化认证
+ * @param {object} srv - CAP服务实例
+ */
 module.exports = async (srv) => {
+  const app = cds.app;
+  if (!app) {
+    console.warn('未找到Express应用实例，无法配置认证');
+    return;
+  }
+
+  const isXsuaaEnabled = process.env.XSUAA_ENABLED || 'true';
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // 在开发模式下，添加登录端点
+  if (!isProduction) {
+    // 模拟登录端点
+    app.post('/login', (req, res) => {
+      console.log('收到登录请求');
+      
+      // 从请求体获取用户名密码
+      const { username, password } = req.body || {};
+      
+      if (!username) {
+        return res.status(400).json({ error: '需要提供用户名' });
+      }
+      
+      // 模拟用户
+      const users = {
+        alice: {
+          id: 'alice',
+          name: 'Alice',
+          password: 'pass',
+          roles: ['viewer', 'editor', 'admin'],
+          tenant: 'devtenant',
+          locale: 'zh'
+        },
+        bob: {
+          id: 'bob',
+          name: 'Bob',
+          password: 'pass',
+          roles: ['viewer', 'editor'],
+          tenant: 'devtenant',
+          locale: 'zh'
+        },
+        charlie: {
+          id: 'charlie',
+          name: 'Charlie',
+          password: 'pass',
+          roles: ['viewer'],
+          tenant: 'devtenant',
+          locale: 'zh'
+        }
+      };
+      
+      // 检查用户名和密码
+      const user = users[username];
+      if (!user || (password && user.password !== password)) {
+        return res.status(401).json({ error: '用户名或密码错误' });
+      }
+      
+      // 创建会话
+      req.session = req.session || {};
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        roles: user.roles,
+        tenant: user.tenant,
+        locale: user.locale
+      };
+      
+      console.log(`用户 ${username} 登录成功`);
+      res.json({ 
+        user: req.session.user,
+        message: '登录成功' 
+      });
+    });
+
+    // 退出登录端点
+    app.post('/logout', (req, res) => {
+      if (req.session) {
+        const username = req.session.user?.id || 'unknown';
+        req.session.user = null;
+        console.log(`用户 ${username} 已登出`);
+      }
+      res.json({ message: '已登出' });
+    });
+
+    // 获取当前用户信息端点
+    app.get('/currentUser', (req, res) => {
+      const user = req.session?.user || { 
+        id: 'anonymous', 
+        roles: ['anonymous'], 
+        tenant: 'default',
+        locale: 'zh'
+      };
+      res.json({ user });
+    });
+  }
+
+  // 添加用户中间件 - 确保每个请求都有用户信息
+  app.use((req, res, next) => {
+    // 从会话中获取用户信息（开发模式）
+    if (req.session?.user) {
+      req.user = req.session.user;
+      // 添加角色检查函数
+      req.user.is = function(role) {
+        return this.roles.includes(role);
+      };
+    } 
+    // 没有用户信息，设置匿名用户
+    else if (!req.user) {
+      req.user = { 
+        id: 'anonymous', 
+        name: 'Anonymous User',
+        roles: ['anonymous'],
+        tenant: 'default',
+        locale: 'zh' 
+      };
+      // 添加角色检查函数
+      req.user.is = function(role) {
+        return this.roles.includes(role);
+      };
+    }
+    next();
+  });
+
+  // 在XSUAA启用的情况下配置Passport
+  if (isXsuaaEnabled === 'true') {
+    try {
+      // 配置Passport
+      passport.use(new JWTStrategy(xsuaaService));
+      app.use(passport.initialize());
+      
+      // 在开发模式下不强制要求JWT认证
+      if (!isProduction) {
+        console.log('开发模式：不强制要求JWT认证');
+        app.use(passport.authenticate('JWT', { 
+          session: false,
+          failWithError: false
+        }));
+      } else {
+        console.log('生产模式：强制要求JWT认证');
+        app.use(passport.authenticate('JWT', { 
+          session: false
+        }));
+      }
+      
+      console.log('XSUAA认证已配置');
+    } catch (error) {
+      console.error('XSUAA认证配置失败:', error.message);
+    }
+  } else {
+    console.log('XSUAA认证已禁用');
+  }
+
   // 获取实体引用
   const { SalesPlans, UserSalesPlanAccess } = srv.entities;
 

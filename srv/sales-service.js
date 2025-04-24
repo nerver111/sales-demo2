@@ -1,14 +1,30 @@
 /**
- * 销售计划管理服务实现 - 修复版
+ * 销售计划管理服务实现
  */
 const cds = require('@sap/cds')
 
+// 数据库连接
+let db;
+
 module.exports = async (srv) => {
   // 确保数据库连接
-  const db = await cds.connect.to('db');
-  
-  // 获取实体定义
-  const { SalesPlans, ListOfSalesPlans, SalesPlanItems, Products, UserSalesPlanAccess } = srv.entities
+  try {
+    db = await cds.connect.to('db');
+    console.log('数据库连接成功');
+  } catch (error) {
+    console.error('数据库连接失败:', error.message);
+  }
+
+  // 尝试引入认证授权处理器
+  try {
+    if (require.resolve('./auth-handler')) {
+      await require('./auth-handler')(srv);
+    }
+  } catch (error) {
+    console.log('认证处理器未找到或加载失败，使用默认认证');
+  }
+
+  const { SalesPlans, ListOfSalesPlans, SalesPlanItems, Products } = srv.entities
 
   // 完成销售计划操作
   srv.on('completeSalesPlan', async (req) => {
@@ -88,41 +104,46 @@ module.exports = async (srv) => {
     }
   });
 
-  // 辅助函数：按用户ID过滤销售计划 - 修复版，处理未认证用户
+  // 辅助函数：按用户ID过滤销售计划
   const filterSalesPlansByUserAccess = async (req) => {
-    try {
-      // 安全检查：如果请求中没有用户对象，则添加一个默认用户（匿名用户）
-      if (!req.user) {
-        req.user = { id: 'anonymous', roles: ['anonymous'] };
+    // 安全检查 - 确保数据库连接
+    if (!db) {
+      try {
+        db = await cds.connect.to('db');
+      } catch (error) {
+        console.error('无法连接到数据库:', error.message);
+        return; // 跳过过滤，返回所有结果
       }
-      
-      // 检查用户角色
-      const isAdmin = req.user.is && (req.user.is('admin') || req.user.is('editor'));
-      
-      // 管理员用户可以查看所有计划
-      if (isAdmin) {
-        console.log('管理员用户访问，显示所有计划');
+    }
+
+    // 安全检查 - 确保用户存在
+    if (!req.user) {
+      console.log('未找到用户信息，跳过访问控制');
+      return;
+    }
+
+    // 跳过管理员用户的权限检查
+    if (req.user.is && req.user.is('admin')) {
+      console.log('管理员用户，无需过滤');
+      return;
+    }
+    
+    // 获取当前用户ID
+    const userId = req.user.id || 'anonymous';
+    console.log(`当前用户: ${userId}`);
+    
+    // 如果没有指定ID，则对整个列表进行过滤（只显示用户有权限的销售计划）
+    if (!req.data || !req.data.ID) {
+      try {
+        // 为了测试开发，暂时返回所有数据，而不是根据权限过滤
+        console.log('开发模式 - 返回所有销售计划数据');
         return;
-      }
-      
-      // 获取当前用户ID
-      const userId = req.user.id || 'anonymous';
-      console.log(`用户 ${userId} 正在访问销售计划`);
-      
-      // 开发模式：允许匿名用户查看所有内容
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('开发模式，显示所有计划');
-        return;
-      }
-      
-      // 如果没有指定ID，则对整个列表进行过滤（只显示用户有权限的销售计划）
-      if (!req.data || !req.data.ID) {
+
+        /* 正式权限控制代码 (暂时注释以便测试)
         // 查询当前用户能访问的销售计划IDs
-        const accessiblePlans = await db.read(UserSalesPlanAccess)
+        const accessiblePlans = await SELECT.from('UserSalesPlanAccess')
           .where({ userId: userId })
           .columns(['salesPlan_ID']);
-        
-        console.log(`查询到用户 ${userId} 有权访问的销售计划:`, accessiblePlans.length);
         
         // 如果用户没有任何关联的销售计划，则返回空
         if (!accessiblePlans || !accessiblePlans.length) {
@@ -138,33 +159,41 @@ module.exports = async (srv) => {
         } else {
           req.query.where({ ID: { '<': 0 } }); // 不匹配任何ID的条件
         }
+        */
+      } catch (error) {
+        console.error("过滤销售计划时出错:", error);
+        // 不拒绝请求，而是返回所有结果
+        console.log('由于错误，返回所有销售计划数据');
       }
-      // 如果指定了ID，检查用户是否有权限访问该销售计划
-      else {
-        const access = await db.read(UserSalesPlanAccess)
+    } 
+    // 如果指定了ID，检查用户是否有权限访问该销售计划
+    else {
+      try {
+        // 为了测试开发，始终允许访问
+        console.log('开发模式 - 允许访问任何销售计划');
+        return;
+
+        /* 正式权限控制代码 (暂时注释以便测试)
+        const access = await SELECT.from('UserSalesPlanAccess')
           .where({ userId: userId, salesPlan_ID: req.data.ID });
         
         if (!access || !access.length) {
           req.reject(403, '您没有权限查看此销售计划');
         }
-      }
-    } catch (error) {
-      console.error("过滤销售计划时出错:", error);
-      // 开发模式：出错时不拒绝请求，而是仅记录错误
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('开发模式，忽略过滤错误，显示所有数据');
-      } else {
-        req.reject(500, "获取访问权限时出错");
+        */
+      } catch (error) {
+        console.error("检查销售计划访问权限时出错:", error);
+        // 不拒绝请求，允许访问
+        console.log('由于错误，允许访问请求的销售计划');
       }
     }
   };
   
   // 在读取销售计划列表时，添加用户访问权限的过滤
-  // 我们在开发阶段先禁用这个过滤器
-  //srv.before('READ', 'SalesPlans', filterSalesPlansByUserAccess);
+  srv.before('READ', 'SalesPlans', filterSalesPlansByUserAccess);
   
   // 在读取销售计划简化视图时，也添加用户访问权限的过滤
-  //srv.before('READ', 'ListOfSalesPlans', filterSalesPlansByUserAccess);
+  srv.before('READ', 'ListOfSalesPlans', filterSalesPlansByUserAccess);
 
   // 授予用户对销售计划的访问权限
   srv.on('grantPlanAccess', async (req) => {

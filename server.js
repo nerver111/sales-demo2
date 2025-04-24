@@ -13,12 +13,36 @@ const cds = require('@sap/cds');
 const noAuth = process.argv.includes('--no-auth');
 console.log('认证状态:', noAuth ? '已禁用 (--no-auth)' : '已启用');
 
-// 我们不做任何认证配置修改，而是让命令行参数决定
-// 如果使用 --no-auth 参数，CDS将自动禁用认证
-
-// 在启动时添加自定义用户处理中间件（而不是认证中间件）
+// 配置服务器和会话
 cds.on('bootstrap', (app) => {
-  if (!noAuth) {
+  // 添加会话支持
+  const session = require('express-session');
+  app.use(session({
+    secret: 'sales-app-secret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1天
+  }));
+
+  // 添加JSON解析中间件，用于处理登录请求
+  const bodyParser = require('body-parser');
+  app.use(bodyParser.json());
+
+  // 添加CORS支持
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    
+    // 处理预检请求
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
+  // 在非认证模式下，添加用户信息中间件
+  if (noAuth) {
     try {
       console.log('服务器启动中，设置用户信息中间件...');
       
@@ -29,7 +53,13 @@ cds.on('bootstrap', (app) => {
           req.user = { 
             id: 'anonymous', 
             name: 'Anonymous User',
-            roles: ['anonymous']
+            roles: ['anonymous', 'viewer', 'editor', 'admin'],
+            locale: 'zh',
+            tenant: 'devtenant'
+          };
+          // 添加角色检查函数
+          req.user.is = function(role) {
+            return this.roles.includes(role);
           };
         }
         next();
@@ -37,6 +67,15 @@ cds.on('bootstrap', (app) => {
     } catch (error) {
       console.error('添加中间件时出错:', error.message);
     }
+  }
+});
+
+// 拦截错误请求
+cds.on('error', (err, req) => {
+  console.error(`处理请求时出错: ${err.message}`);
+  // 仅在开发模式下显示完整错误信息
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
   }
 });
 
