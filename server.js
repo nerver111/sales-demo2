@@ -1,7 +1,5 @@
-// 加载环境变量和XSUAA配置
+// 加载环境变量
 const xsenv = require('@sap/xsenv');
-
-// 确保加载环境变量
 try {
   xsenv.loadEnv();
 } catch (err) {
@@ -11,24 +9,35 @@ try {
 // 加载CDS应用
 const cds = require('@sap/cds');
 
-// 最简方式 - 强制禁用CAP的内置认证，改为自定义中间件
-// 这样可以完全绕过CAP的认证检查
-cds.env.requires.auth = false;
+// 检查命令行参数
+const noAuth = process.argv.includes('--no-auth');
+console.log('认证状态:', noAuth ? '已禁用 (--no-auth)' : '已启用');
 
-// 在启动时添加自定义认证中间件
+// 我们不做任何认证配置修改，而是让命令行参数决定
+// 如果使用 --no-auth 参数，CDS将自动禁用认证
+
+// 在启动时添加自定义用户处理中间件（而不是认证中间件）
 cds.on('bootstrap', (app) => {
-  console.log('服务器启动中，禁用CAP内置认证，使用自定义认证...');
-  
-  try {
-    // 使用我们定义的auth模块作为一个普通的Express中间件
-    const setupAuth = require('./srv/auth');
-    setupAuth(app);
-  } catch (error) {
-    console.error('添加认证中间件时出错:', error.message);
+  if (!noAuth) {
+    try {
+      console.log('服务器启动中，设置用户信息中间件...');
+      
+      // 添加用户信息中间件（不涉及认证）
+      app.use((req, res, next) => {
+        // 确保有一个用户对象
+        if (!req.user) {
+          req.user = { 
+            id: 'anonymous', 
+            name: 'Anonymous User',
+            roles: ['anonymous']
+          };
+        }
+        next();
+      });
+    } catch (error) {
+      console.error('添加中间件时出错:', error.message);
+    }
   }
 });
-
-// 启动消息
-console.log('XSUAA认证已配置');
 
 module.exports = cds.server; 
