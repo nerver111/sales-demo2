@@ -29,14 +29,9 @@ body {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   padding: 40px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 480px;
-  overflow: hidden;
   position: relative;
-  padding: 40px;
 }
 
 /* 登录页头部 */
@@ -141,7 +136,7 @@ body {
 }
 
 /* 表单底部 */
-.form-footer {
+.form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -180,22 +175,6 @@ body {
 @media (max-width: 576px) {
   .login-card {
     max-width: 100%;
-.login-tips p {
-  margin-bottom: 5px;
-}
-
-/* 底部版权信息 */
-.login-footer {
-  margin-top: 30px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-
-/* 响应式设计 */
-@media (max-width: 500px) {
-  .login-card {
-    max-width: 100%;
   }
   
   .login-header {
@@ -217,6 +196,12 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-.fa-spin {
-  animation: spin 1s infinite linear;
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
 } 
