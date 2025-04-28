@@ -36,23 +36,6 @@
       "destination": [
         {
           "binding_name": null,
-          "credentials": {
-            "clientid": "sb-clone-dest-serv-f4a60f93trial",
-            "clientsecret": "destination-secret",
-            "uri": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
-            "url": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
-            "instances": [],
-            "destinations": [
-              {
-                "name": "sap-demo",
-                "url": "https://www.baidu.com",
-                "authentication": "NoAuthentication",
-                "proxyType": "Internet",
-                "type": "HTTP",
-                "description": "示例目标"
-              }
-            ]
-          },
           "instance_name": "destination-service",
           "label": "destination",
           "name": "destination-service",
@@ -62,6 +45,21 @@
             "destination",
             "conn",
             "connectivity"
+          ],
+          "clientid": "sb-clone-dest-serv-f4a60f93trial",
+          "clientsecret": "destination-secret",
+          "uri": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
+          "url": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
+          "instances": [],
+          "destinations": [
+            {
+              "name": "sap-demo",
+              "url": "https://www.baidu.com",
+              "authentication": "NoAuthentication",
+              "proxyType": "Internet",
+              "type": "HTTP",
+              "description": "示例目标"
+            }
           ]
         }
       ]
