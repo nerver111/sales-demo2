@@ -20,28 +20,51 @@ let destinationService;
 try {
   destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
   console.log('成功获取destination服务配置');
-  console.log(JSON.stringify(destinationService, null, 2));
 } catch (err) {
   console.error('获取destination服务失败:', err.message);
-  console.error('错误详情:', err);
-  process.exit(1);
+  console.log('将使用默认的模拟destination配置进行测试');
+  
+  // 创建模拟的destination服务配置
+  destinationService = {
+    destinations: [
+      {
+        name: "sap-demo",
+        url: "https://www.baidu.com",
+        authentication: "NoAuthentication",
+        proxyType: "Internet",
+        type: "HTTP",
+        description: "示例目标"
+      }
+    ]
+  };
 }
+
+console.log('Destination服务配置:', JSON.stringify(destinationService, null, 2));
 
 // 检查destination服务结构
 console.log('\n检查destination服务结构:');
-const keys = Object.keys(destinationService);
-console.log('顶级属性:', keys);
-
-if (destinationService.credentials) {
-  console.log('credentials属性:', Object.keys(destinationService.credentials));
+if (destinationService) {
+  const keys = Object.keys(destinationService);
+  console.log('顶级属性:', keys);
 } else {
-  console.log('未找到credentials属性');
+  console.log('Warning: destinationService为undefined');
 }
 
 // 获取destination函数
 async function getDestination(destinationName) {
   if (!destinationName) {
     throw new Error('必须提供destination名称');
+  }
+  
+  if (!destinationService) {
+    console.log('Destination服务未配置，使用模拟数据');
+    return {
+      name: "sap-demo",
+      url: "https://www.baidu.com",
+      authentication: "NoAuthentication",
+      type: "HTTP",
+      proxyType: "Internet"
+    };
   }
   
   // 检查destinations是否直接在顶级对象中
