@@ -1,6 +1,7 @@
 /**
  * SAP Destination服务工具函数
  * 用于在应用程序中获取和使用destination配置
+ * 支持在SAP Business Application Studio和本地环境中使用
  */
 const xsenv = require('@sap/xsenv');
 const axios = require('axios');
@@ -11,6 +12,44 @@ const path = require('path');
 // 用于保存destination配置的全局变量
 let destinationConfigs = null;
 
+// 从default-env.json直接读取destination配置
+function getDestinationDirectly(destinationName) {
+  try {
+    // 查找default-env.json
+    const rootPath = path.join(__dirname, '..');
+    const defaultEnvPath = path.join(rootPath, 'default-env.json');
+    
+    if (!fs.existsSync(defaultEnvPath)) {
+      throw new Error(`找不到文件: ${defaultEnvPath}`);
+    }
+    
+    // 读取配置
+    const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
+    
+    // 检查destination配置
+    if (!defaultEnv.VCAP_SERVICES || 
+        !defaultEnv.VCAP_SERVICES.destination || 
+        !defaultEnv.VCAP_SERVICES.destination[0] ||
+        !defaultEnv.VCAP_SERVICES.destination[0].destinations) {
+      throw new Error('文件中没有正确的destination配置');
+    }
+    
+    // 查找指定名称的destination
+    const destinations = defaultEnv.VCAP_SERVICES.destination[0].destinations;
+    const destination = destinations.find(d => d.name === destinationName);
+    
+    if (!destination) {
+      throw new Error(`找不到名为${destinationName}的destination配置`);
+    }
+    
+    console.log(`在default-env.json中找到destination: ${destinationName}`);
+    return destination;
+  } catch (error) {
+    console.error('直接获取destination配置失败:', error.message);
+    throw error;
+  }
+}
+
 // 获取destination服务和配置
 function getDestinationService() {
   if (destinationConfigs) {
@@ -19,6 +58,38 @@ function getDestinationService() {
 
   try {
     console.log('获取destination服务配置...');
+    
+    // BAS环境中特定的方法
+    try {
+      console.log('尝试使用BAS特定方法获取destination服务...');
+      const services = xsenv.getServices({
+        destination: { tag: 'destination' }
+      });
+      
+      if (services && services.destination) {
+        console.log('通过BAS特定方法找到destination服务');
+        destinationConfigs = services.destination;
+        return destinationConfigs;
+      }
+    } catch (err) {
+      console.log('BAS特定方法未能获取destination服务:', err.message);
+    }
+    
+    // 尝试使用BAS环境中的不同标签
+    try {
+      console.log('尝试使用不同标签获取destination服务...');
+      const services = xsenv.getServices({
+        destination: { label: 'destination' }
+      });
+      
+      if (services && services.destination) {
+        console.log('通过label=destination找到destination服务');
+        destinationConfigs = services.destination;
+        return destinationConfigs;
+      }
+    } catch (err) {
+      console.log('通过label获取destination服务失败:', err.message);
+    }
     
     // 方法1: 尝试从xsenv获取服务
     try {
@@ -100,19 +171,98 @@ async function getDestination(destinationName) {
     throw new Error('必须提供destination名称');
   }
 
-  const destService = getDestinationService();
-  
-  // 优先从destinations数组中查找
-  if (destService.destinations && Array.isArray(destService.destinations)) {
-    const dest = destService.destinations.find(d => d.name === destinationName);
-    if (dest) {
-      console.log(`在destinations数组中找到destination: ${destinationName}`);
-      return dest;
-    }
+  // 在BAS环境中检查特定环境变量
+  const basDestUrl = process.env[`DESTINATION_${destinationName.toUpperCase()}_URL`];
+  if (basDestUrl) {
+    console.log(`从BAS环境变量找到destination URL: ${basDestUrl}`);
+    return {
+      name: destinationName,
+      url: basDestUrl,
+      authentication: "NoAuthentication",
+      proxyType: "Internet",
+      type: "HTTP",
+      description: "从环境变量生成的destination配置"
+    };
   }
-  
-  // 如果找不到，抛出错误
-  throw new Error(`未找到名为"${destinationName}"的destination配置。请确保在SAP BTP中已正确配置此destination`);
+
+  try {
+    // 尝试标准方法
+    try {
+      const destService = getDestinationService();
+      
+      // 优先从destinations数组中查找
+      if (destService.destinations && Array.isArray(destService.destinations)) {
+        const dest = destService.destinations.find(d => d.name === destinationName);
+        if (dest) {
+          console.log(`在destinations数组中找到destination: ${destinationName}`);
+          return dest;
+        }
+      }
+
+      // 通过destination服务实时获取（Business Application Studio中的推荐方式）
+      if (destService.uri || destService.url) {
+        console.log(`尝试通过destination服务API获取destination: ${destinationName}`);
+        // 这里可以使用destination服务API获取destination配置
+        // 暂未实现，如果需要在BAS中使用，请考虑实现此部分
+      }
+    } catch (error) {
+      console.log('标准方法获取destination失败, 尝试其他方法...', error.message);
+    }
+    
+    // 直接检查default-env.json
+    try {
+      // 先检查当前目录下的default-env.json
+      const defaultEnvPath = path.join(process.cwd(), 'default-env.json');
+      if (fs.existsSync(defaultEnvPath)) {
+        const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
+        
+        if (defaultEnv.VCAP_SERVICES && 
+            defaultEnv.VCAP_SERVICES.destination && 
+            defaultEnv.VCAP_SERVICES.destination[0] &&
+            defaultEnv.VCAP_SERVICES.destination[0].destinations) {
+          
+          const dest = defaultEnv.VCAP_SERVICES.destination[0].destinations.find(d => d.name === destinationName);
+          if (dest) {
+            console.log(`在当前目录的default-env.json中直接找到destination: ${destinationName}`);
+            return dest;
+          }
+        }
+      }
+      
+      // 再检查上级目录下的default-env.json
+      const rootDefaultEnvPath = path.join(process.cwd(), '..', 'default-env.json');
+      if (fs.existsSync(rootDefaultEnvPath)) {
+        const defaultEnv = JSON.parse(fs.readFileSync(rootDefaultEnvPath, 'utf8'));
+        
+        if (defaultEnv.VCAP_SERVICES && 
+            defaultEnv.VCAP_SERVICES.destination && 
+            defaultEnv.VCAP_SERVICES.destination[0] &&
+            defaultEnv.VCAP_SERVICES.destination[0].destinations) {
+          
+          const dest = defaultEnv.VCAP_SERVICES.destination[0].destinations.find(d => d.name === destinationName);
+          if (dest) {
+            console.log(`在上级目录的default-env.json中直接找到destination: ${destinationName}`);
+            return dest;
+          }
+        }
+      }
+    } catch (err) {
+      console.log('从default-env.json查找destination失败:', err.message);
+    }
+    
+    // 如果标准方法失败，尝试直接读取
+    try {
+      return getDestinationDirectly(destinationName);
+    } catch (error) {
+      console.log('直接读取destination失败:', error.message);
+    }
+    
+    // 所有方法都失败，抛出错误
+    throw new Error(`未找到名为"${destinationName}"的destination配置。请确保在SAP BTP中已正确配置此destination`);
+  } catch (error) {
+    console.error('获取destination失败:', error.message);
+    throw error;
+  }
 }
 
 /**
@@ -127,7 +277,13 @@ async function callDestination(destinationName, path, options = {}) {
     const destination = await getDestination(destinationName);
     
     // 构建请求URL和配置
-    const url = `${destination.url}${path || ''}`;
+    // 确保path不以/开头，除非URL不以/结尾
+    let finalPath = path || '';
+    if (finalPath.startsWith('/') && destination.url.endsWith('/')) {
+      finalPath = finalPath.substring(1);
+    }
+    
+    const url = `${destination.url}${finalPath}`;
     const config = {
       ...options,
       url,
