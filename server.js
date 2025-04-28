@@ -6,6 +6,27 @@ try {
   console.log('无法加载环境变量文件，将使用系统环境变量');
 }
 
+// 获取destination服务实例
+let destinationService;
+try {
+  destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
+  console.log('已成功加载destination服务配置');
+} catch (err) {
+  console.warn('未找到destination服务配置, 将使用默认值:', err.message);
+  // 创建一个默认的destination服务对象用于本地开发
+  destinationService = {
+    credentials: {
+      destinations: [
+        {
+          name: "local-service",
+          url: "http://localhost:8080",
+          authentication: "NoAuthentication"
+        }
+      ]
+    }
+  };
+}
+
 // 加载CDS应用
 const cds = require('@sap/cds');
 
@@ -68,6 +89,8 @@ cds.on('bootstrap', (app) => {
       console.error('添加中间件时出错:', error.message);
     }
   }
+
+  console.log('注册服务处理程序...');
 });
 
 // 拦截错误请求
@@ -76,6 +99,21 @@ cds.on('error', (err, req) => {
   // 仅在开发模式下显示完整错误信息
   if (process.env.NODE_ENV !== 'production') {
     console.error(err.stack);
+  }
+});
+
+// 服务初始化后
+cds.on('served', async () => {
+  // 获取销售服务
+  const salesService = await cds.connect.to('SalesService');
+  
+  // 注册外部服务模块
+  try {
+    const externalServiceHandler = require('./srv/external-service');
+    await externalServiceHandler(salesService);
+    console.log('已注册外部服务处理程序');
+  } catch (error) {
+    console.error('注册外部服务处理程序失败:', error.message);
   }
 });
 

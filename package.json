@@ -9,6 +9,7 @@
     "@sap/cds": "^8.9.2",
     "@sap/xsenv": "^5.5.0",
     "@sap/xssec": "^3.6.2",
+    "axios": "^1.6.7",
     "body-parser": "^1.20.3",
     "express": "^4",
     "express-session": "^1.18.1",

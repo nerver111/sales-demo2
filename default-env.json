@@ -32,6 +32,48 @@
           ],
           "volume_mounts": []
         }
+      ],
+      "destination": [
+        {
+          "binding_name": null,
+          "credentials": {
+            "clientid": "sb-clone-dest-serv-f4a60f93trial",
+            "clientsecret": "destination-secret",
+            "uri": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
+            "url": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
+            "instances": [],
+            "destinations": [
+              {
+                "name": "my-odata-service",
+                "url": "https://services.odata.org/V2/Northwind/Northwind.svc/",
+                "authentication": "NoAuthentication",
+                "proxyType": "Internet",
+                "type": "HTTP",
+                "description": "Northwind OData服务示例"
+              },
+              {
+                "name": "my-erp-system",
+                "url": "https://my-erp-system.example.com",
+                "authentication": "BasicAuthentication",
+                "username": "${vcap.services.credentials-service.credentials.username}",
+                "password": "${vcap.services.credentials-service.credentials.password}",
+                "proxyType": "OnPremise",
+                "type": "HTTP",
+                "description": "ERP系统连接"
+              }
+            ]
+          },
+          "instance_name": "destination-service",
+          "label": "destination",
+          "name": "destination-service",
+          "plan": "lite",
+          "provider": null,
+          "tags": [
+            "destination",
+            "conn",
+            "connectivity"
+          ]
+        }
       ]
     },
     "VCAP_APPLICATION": {

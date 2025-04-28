@@ -52,7 +52,31 @@ service SalesService @(
   action grantPlanAccess(userId: String, salesPlanId: Integer, accessLevel: String);
   
   @(restrict: [{ to: 'admin' }])
-  action revokePlanAccess(userId: String, salesPlanId: Integer); 
+  action revokePlanAccess(userId: String, salesPlanId: Integer);
+  
+  // 添加外部服务API - 使用Destination服务
+  type ExternalServiceResponse {
+    success: Boolean;
+    data: String;
+    error: String;
+  }
+  
+  @(restrict: [{ to: 'admin' }])
+  action callExternalService(destinationName: String, path: String) returns ExternalServiceResponse;
+  
+  @(restrict: [{ to: 'viewer' }])
+  function getProducts() returns {
+    success: Boolean;
+    count: Integer;
+    products: array of {
+      ProductID: Integer;
+      ProductName: String;
+      UnitPrice: Decimal;
+      UnitsInStock: Integer;
+      CategoryID: Integer;
+    };
+    error: String;
+  };
 }
 
 // 管理服务，用于管理员访问
