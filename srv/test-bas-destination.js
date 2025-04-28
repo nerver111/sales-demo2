@@ -4,13 +4,28 @@
  */
 const xsenv = require('@sap/xsenv');
 const { callDestination } = require('./destination-helper');
+const fs = require('fs');
+const path = require('path');
 
-// 尝试加载default-env.json
+// 手动设置环境变量
 try {
-  xsenv.loadEnv();
-  console.log('已加载环境变量文件');
+  // 尝试加载default-env.json
+  const defaultEnvPath = path.join(__dirname, '..', 'default-env.json');
+  if (fs.existsSync(defaultEnvPath)) {
+    console.log(`找到环境变量文件: ${defaultEnvPath}`);
+    const envContent = fs.readFileSync(defaultEnvPath, 'utf8');
+    const envJson = JSON.parse(envContent);
+    
+    // 直接设置VCAP_SERVICES环境变量
+    if (envJson.VCAP_SERVICES) {
+      process.env.VCAP_SERVICES = JSON.stringify(envJson.VCAP_SERVICES);
+      console.log('已手动设置VCAP_SERVICES环境变量');
+    }
+  } else {
+    console.log(`未找到环境变量文件: ${defaultEnvPath}`);
+  }
 } catch (err) {
-  console.log('未找到或无法加载环境变量文件:', err.message);
+  console.log('设置环境变量失败:', err.message);
 }
 
 console.log('=========== SAP BTP Destination 测试 ===========');
@@ -19,6 +34,14 @@ console.log('当前工作目录:', process.cwd());
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('VCAP_SERVICES是否存在:', !!process.env.VCAP_SERVICES);
 console.log('VCAP_APPLICATION是否存在:', !!process.env.VCAP_APPLICATION);
+
+// 添加硬编码测试
+if (!process.env.VCAP_SERVICES) {
+  console.log('未找到VCAP_SERVICES, 添加硬编码配置用于测试');
+  // 手动添加destination配置
+  process.env.DESTINATION_SAP_DEMO_URL = 'https://httpbin.org/get';
+  console.log('已设置DESTINATION_SAP_DEMO_URL环境变量:', process.env.DESTINATION_SAP_DEMO_URL);
+}
 
 async function testDestination() {
   try {
