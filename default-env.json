@@ -54,7 +54,7 @@
           "destinations": [
             {
               "name": "sap-demo",
-              "url": "https://www.baidu.com",
+              "url": "https://httpbin.org/get",
               "authentication": "NoAuthentication",
               "proxyType": "Internet",
               "type": "HTTP",

@@ -18,53 +18,63 @@ try {
 // 获取destination服务
 let destinationService;
 try {
-  destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
-  console.log('成功获取destination服务配置');
+  // 尝试使用直接标签查找
+  try {
+    destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
+    console.log('通过tag成功加载destination服务配置');
+  } catch (err) {
+    // 尝试按服务名称查找
+    console.log('尝试通过服务名称查找destination...');
+    const services = xsenv.getServices();
+    
+    // 查找可能的destination服务
+    const possibleServiceNames = Object.keys(services).filter(
+      key => key.toLowerCase().includes('destination')
+    );
+    
+    if (possibleServiceNames.length > 0) {
+      console.log(`找到可能的destination服务: ${possibleServiceNames.join(', ')}`);
+      destinationService = services[possibleServiceNames[0]];
+    } else {
+      throw new Error('未找到任何destination相关服务');
+    }
+  }
+  
+  console.log('已成功加载destination服务配置');
 } catch (err) {
   console.error('获取destination服务失败:', err.message);
-  console.log('将使用默认的模拟destination配置进行测试');
   
-  // 创建模拟的destination服务配置
-  destinationService = {
-    destinations: [
-      {
-        name: "sap-demo",
-        url: "https://www.baidu.com",
-        authentication: "NoAuthentication",
-        proxyType: "Internet",
-        type: "HTTP",
-        description: "示例目标"
+  // 尝试从环境变量获取
+  const vcapServices = process.env.VCAP_SERVICES;
+  if (vcapServices) {
+    try {
+      const services = JSON.parse(vcapServices);
+      if (services.destination) {
+        console.log('从VCAP_SERVICES找到destination服务');
+        destinationService = services.destination[0];
       }
-    ]
-  };
+    } catch (e) {
+      console.error('解析VCAP_SERVICES失败:', e.message);
+    }
+  }
+  
+  if (!destinationService) {
+    console.error('未找到destination服务，请确保已在BTP上正确配置');
+    process.exit(1);
+  }
 }
 
 console.log('Destination服务配置:', JSON.stringify(destinationService, null, 2));
 
 // 检查destination服务结构
 console.log('\n检查destination服务结构:');
-if (destinationService) {
-  const keys = Object.keys(destinationService);
-  console.log('顶级属性:', keys);
-} else {
-  console.log('Warning: destinationService为undefined');
-}
+const keys = Object.keys(destinationService);
+console.log('顶级属性:', keys);
 
 // 获取destination函数
 async function getDestination(destinationName) {
   if (!destinationName) {
     throw new Error('必须提供destination名称');
-  }
-  
-  if (!destinationService) {
-    console.log('Destination服务未配置，使用模拟数据');
-    return {
-      name: "sap-demo",
-      url: "https://www.baidu.com",
-      authentication: "NoAuthentication",
-      type: "HTTP",
-      proxyType: "Internet"
-    };
   }
   
   // 检查destinations是否直接在顶级对象中
@@ -85,15 +95,7 @@ async function getDestination(destinationName) {
     }
   }
   
-  // 尝试使用模拟数据作为后备
-  console.log(`未找到destination配置，使用模拟数据: ${destinationName}`);
-  return {
-    name: "sap-demo",
-    url: "https://www.baidu.com",
-    authentication: "NoAuthentication",
-    type: "HTTP",
-    proxyType: "Internet"
-  };
+  throw new Error(`未找到名为 ${destinationName} 的destination配置，请确保已在BTP上配置了此destination`);
 }
 
 // 测试调用sap-demo destination

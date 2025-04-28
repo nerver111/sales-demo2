@@ -29,8 +29,8 @@ module.exports = async (srv) => {
     }
   });
   
-  // 获取百度首页信息示例
-  srv.on('getProducts', async () => {
+  // 使用sap-demo destination调用服务
+  srv.on('getProducts', async (req) => {
     try {
       console.log('开始调用sap-demo destination...');
       
@@ -38,35 +38,24 @@ module.exports = async (srv) => {
       const response = await callDestination('sap-demo', '/');
       console.log('成功调用sap-demo destination');
       
+      // 返回结果
       return { 
         success: true, 
         count: 1, 
         products: [{
           ProductID: 1,
-          ProductName: "示例产品 - 成功调用百度",
+          ProductName: "成功连接到httpbin服务",
           UnitPrice: 99.99,
           UnitsInStock: 100,
           CategoryID: 1
         }],
-        message: "成功调用sap-demo destination (百度)"
+        message: "成功调用sap-demo destination"
       };
     } catch (error) {
-      console.error('调用destination失败:', error);
+      console.error('调用destination失败:', error.message);
       
-      // 返回错误信息，但不中断应用
-      return { 
-        success: false, 
-        error: error.message,
-        count: 1,
-        products: [{
-          ProductID: 999,
-          ProductName: "模拟产品 (Destination调用失败)",
-          UnitPrice: 0,
-          UnitsInStock: 0,
-          CategoryID: 0
-        }],
-        message: `调用失败: ${error.message}`
-      };
+      // 返回失败信息
+      return req.error(500, `调用destination服务失败: ${error.message}`);
     }
   });
 }; 

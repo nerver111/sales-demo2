@@ -9,24 +9,49 @@ const https = require('https');
 // 尝试从环境变量加载服务
 let destinationService;
 try {
-  destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
+  // 尝试使用直接标签查找
+  try {
+    destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
+    console.log('通过tag成功加载destination服务配置');
+  } catch (err) {
+    // 尝试按服务名称查找
+    console.log('尝试通过服务名称查找destination...');
+    const services = xsenv.getServices();
+    
+    // 查找可能的destination服务
+    const possibleServiceNames = Object.keys(services).filter(
+      key => key.toLowerCase().includes('destination')
+    );
+    
+    if (possibleServiceNames.length > 0) {
+      console.log(`找到可能的destination服务: ${possibleServiceNames.join(', ')}`);
+      destinationService = services[possibleServiceNames[0]];
+    } else {
+      throw new Error('未找到任何destination相关服务');
+    }
+  }
+  
   console.log('已成功加载destination服务配置');
 } catch (err) {
-  console.warn('未找到destination服务配置, 将使用模拟数据', err.message);
+  console.warn('无法从环境变量加载destination服务配置:', err.message);
   
-  // 创建模拟的destination服务配置
-  destinationService = {
-    destinations: [
-      {
-        name: "sap-demo",
-        url: "https://www.baidu.com",
-        authentication: "NoAuthentication",
-        proxyType: "Internet",
-        type: "HTTP",
-        description: "示例目标 (模拟)"
+  // 尝试查找VCAP_SERVICES环境变量中的destination服务
+  const vcapServices = process.env.VCAP_SERVICES;
+  if (vcapServices) {
+    try {
+      const services = JSON.parse(vcapServices);
+      if (services.destination) {
+        console.log('从VCAP_SERVICES找到destination服务');
+        destinationService = services.destination[0];
       }
-    ]
-  };
+    } catch (e) {
+      console.error('解析VCAP_SERVICES失败:', e.message);
+    }
+  }
+  
+  if (!destinationService) {
+    console.error('未找到destination服务，请确保已在BTP上正确配置');
+  }
 }
 
 /**
@@ -39,8 +64,12 @@ async function getDestination(destinationName) {
     throw new Error('必须提供destination名称');
   }
 
+  if (!destinationService) {
+    throw new Error('未找到destination服务，请确保已在BTP上正确配置');
+  }
+
   // 检查destinations是否直接在顶级对象中
-  if (destinationService && destinationService.destinations && Array.isArray(destinationService.destinations)) {
+  if (destinationService.destinations && Array.isArray(destinationService.destinations)) {
     const dest = destinationService.destinations.find(d => d.name === destinationName);
     if (dest) {
       console.log(`在顶级destinations中找到destination配置: ${destinationName}`);
@@ -49,7 +78,7 @@ async function getDestination(destinationName) {
   }
   
   // 检查是否在credentials下
-  if (destinationService && destinationService.credentials && destinationService.credentials.destinations) {
+  if (destinationService.credentials && destinationService.credentials.destinations) {
     const dest = destinationService.credentials.destinations.find(d => d.name === destinationName);
     if (dest) {
       console.log(`在credentials.destinations中找到destination配置: ${destinationName}`);
@@ -57,16 +86,8 @@ async function getDestination(destinationName) {
     }
   }
 
-  // 如果找不到，使用模拟destination
-  console.log(`未找到名为 ${destinationName} 的destination配置，使用模拟数据`);
-  return {
-    name: destinationName,
-    url: "https://www.baidu.com",
-    authentication: "NoAuthentication",
-    type: "HTTP",
-    proxyType: "Internet",
-    description: "模拟的destination配置"
-  };
+  // 如果找不到，抛出错误
+  throw new Error(`未找到名为 ${destinationName} 的destination配置，请确保已在BTP上配置了此destination`);
 }
 
 /**
@@ -103,23 +124,8 @@ async function callDestination(destinationName, path, options = {}) {
     
     // 发送请求
     console.log(`发送请求到目标服务: ${destination.name} (${url})`);
-    try {
-      const response = await axios(config);
-      return response.data;
-    } catch (requestError) {
-      console.error('请求失败:', requestError.message);
-      
-      // 返回模拟数据，以允许开发继续而不是失败
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('返回模拟数据用于开发环境');
-        return { 
-          mock: true, 
-          message: "模拟数据 - 实际请求失败",
-          error: requestError.message
-        };
-      }
-      throw requestError;
-    }
+    const response = await axios(config);
+    return response.data;
   } catch (error) {
     console.error('调用destination服务失败:', error.message);
     throw error;
