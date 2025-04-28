@@ -6,7 +6,7 @@
           "credentials": {
             "apiurl": "https://api.authentication.ap21.hana.ondemand.com",
             "clientid": "sb-sales-plan-app!t62802",
-            "clientsecret": "494d84f0-5ca6-4c14-be3b-6c41f7c9fa80$KN5V6xImGDm8MUjrkLPBen_Fkt5QzbXLblixwT3kanQ=",
+            "clientsecret": "3dd84f49-3194-4038-ae78-535280cea8fb$j1fwmzyFUadjdqHsL46gemmryzAcwpTZrHyQjA03Dvo=",
             "identityzone": "f4a60f93trial",
             "identityzoneid": "377277a3-0e38-4219-8c63-12f514e5a58e",
             "sburl": "https://internal-xsuaa.authentication.ap21.hana.ondemand.com",
@@ -35,31 +35,30 @@
       ],
       "destination": [
         {
-          "binding_name": null,
-          "instance_name": "destination-service",
+          "binding_guid": "06be2f81-3450-4aa3-ae5f-29bcb2e92ccb",
+          "credentials": {
+            "clientid": "sb-clone4507a478a956419283dcb2fdb865ad4c!b62802|destination-xsappname!b5",
+            "clientsecret": "06be2f81-3450-4aa3-ae5f-29bcb2e92ccb$pspDWu1ZXkdpv4ggYBLKVWtoyeobOs-xXLYIER-fXZI=",
+            "credential-type": "binding-secret",
+            "identityzone": "f4a60f93trial",
+            "instanceid": "4507a478-a956-4192-83dc-b2fdb865ad4c",
+            "tenantid": "377277a3-0e38-4219-8c63-12f514e5a58e",
+            "tenantmode": "dedicated",
+            "token-type": [
+              "xsuaa"
+            ],
+            "uaadomain": "authentication.ap21.hana.ondemand.com",
+            "uri": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
+            "url": "https://f4a60f93trial.authentication.ap21.hana.ondemand.com"
+          },
+          "instance_name": "sap-demo",
           "label": "destination",
-          "name": "destination-service",
+          "name": "sap-demo",
           "plan": "lite",
-          "provider": null,
           "tags": [
             "destination",
             "conn",
-            "connectivity"
-          ],
-          "clientid": "sb-clone-dest-serv-f4a60f93trial",
-          "clientsecret": "destination-secret",
-          "uri": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
-          "url": "https://destination-configuration.cfapps.ap21.hana.ondemand.com",
-          "instances": [],
-          "destinations": [
-            {
-              "name": "sap-demo",
-              "url": "https://httpbin.org/get",
-              "authentication": "NoAuthentication",
-              "proxyType": "Internet",
-              "type": "HTTP",
-              "description": "示例目标"
-            }
+            "connsvc"
           ]
         }
       ]

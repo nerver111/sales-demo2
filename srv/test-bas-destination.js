@@ -2,7 +2,16 @@
  * SAP BTP Destination 测试脚本
  * 专门用于在SAP Business Application Studio中测试
  */
+const xsenv = require('@sap/xsenv');
 const { callDestination } = require('./destination-helper');
+
+// 尝试加载default-env.json
+try {
+  xsenv.loadEnv();
+  console.log('已加载环境变量文件');
+} catch (err) {
+  console.log('未找到或无法加载环境变量文件:', err.message);
+}
 
 console.log('=========== SAP BTP Destination 测试 ===========');
 console.log('运行环境信息:');
