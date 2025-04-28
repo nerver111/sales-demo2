@@ -9,6 +9,11 @@ const https = require('https');
 
 // 用于保存destination配置的全局变量
 let destinationConfigs = null;
+// 用于缓存destination配置
+const destinationCache = new Map();
+// 用于缓存访问令牌
+let cachedToken = null;
+let tokenExpiration = 0;
 
 // 获取destination服务和配置
 function getDestinationService() {
@@ -102,6 +107,115 @@ function getDestinationService() {
 }
 
 /**
+ * 获取Destination服务的访问令牌
+ * @returns {Promise<string>} 访问令牌
+ */
+async function getDestinationToken() {
+  try {
+    // 检查缓存的令牌是否有效
+    const now = Date.now();
+    if (cachedToken && tokenExpiration > now) {
+      return cachedToken;
+    }
+
+    const destService = getDestinationService();
+    if (!destService || !destService.clientid || !destService.clientsecret) {
+      throw new Error('无法获取destination服务凭据');
+    }
+
+    console.log('正在获取destination服务访问令牌...');
+    const tokenUrl = `${destService.url}/oauth/token`;
+
+    const response = await axios.post(
+      tokenUrl,
+      'grant_type=client_credentials',
+      {
+        auth: {
+          username: destService.clientid,
+          password: destService.clientsecret
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    if (!response.data || !response.data.access_token) {
+      throw new Error('无法获取访问令牌');
+    }
+
+    cachedToken = response.data.access_token;
+    // 令牌有效期设为返回的过期时间减去60秒的安全边界
+    tokenExpiration = now + (response.data.expires_in * 1000) - 60000;
+    
+    console.log('成功获取访问令牌');
+    return cachedToken;
+  } catch (error) {
+    console.error('获取访问令牌失败:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 从Destination服务API获取destination配置
+ * @param {string} destinationName - destination名称
+ * @returns {Promise<object>} - destination配置对象
+ */
+async function getDestinationFromAPI(destinationName) {
+  try {
+    // 检查缓存
+    if (destinationCache.has(destinationName)) {
+      console.log(`使用缓存的destination配置: ${destinationName}`);
+      return destinationCache.get(destinationName);
+    }
+
+    const destService = getDestinationService();
+    if (!destService || !destService.uri) {
+      throw new Error('无法获取destination服务URI');
+    }
+
+    const token = await getDestinationToken();
+    const destUrl = `${destService.uri}/destination-configuration/v1/destinations/${destinationName}`;
+
+    console.log(`正在从API获取destination配置: ${destinationName}`);
+    const response = await axios.get(destUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.data) {
+      throw new Error(`无法获取destination配置: ${destinationName}`);
+    }
+
+    // 转换返回的配置为标准格式
+    const destConfig = {
+      name: response.data.destinationConfiguration.Name,
+      url: response.data.destinationConfiguration.URL,
+      authentication: response.data.destinationConfiguration.Authentication,
+      proxyType: response.data.destinationConfiguration.ProxyType,
+      type: response.data.destinationConfiguration.Type,
+      description: response.data.destinationConfiguration.Description
+    };
+
+    // 根据认证类型添加凭据
+    if (destConfig.authentication === 'BasicAuthentication') {
+      destConfig.username = response.data.destinationConfiguration.User;
+      destConfig.password = response.data.destinationConfiguration.Password;
+    }
+
+    // 缓存配置
+    destinationCache.set(destinationName, destConfig);
+    console.log(`成功获取destination配置: ${destinationName}`);
+    
+    return destConfig;
+  } catch (error) {
+    console.error(`从API获取destination配置失败:`, error.message);
+    throw error;
+  }
+}
+
+/**
  * 获取指定名称的destination配置
  * @param {string} destinationName - destination名称
  * @returns {Promise<object>} - destination配置对象
@@ -126,7 +240,7 @@ async function getDestination(destinationName) {
   }
 
   try {
-    // 尝试标准方法
+    // 尝试从local destinations数组中查找
     try {
       const destService = getDestinationService();
       
@@ -134,19 +248,23 @@ async function getDestination(destinationName) {
       if (destService.destinations && Array.isArray(destService.destinations)) {
         const dest = destService.destinations.find(d => d.name === destinationName);
         if (dest) {
-          console.log(`在destinations数组中找到destination: ${destinationName}`);
+          console.log(`在本地destinations数组中找到destination: ${destinationName}`);
           return dest;
         }
       }
+    } catch (error) {
+      console.log('从本地destinations数组获取失败, 尝试其他方法...', error.message);
+    }
 
-      // 通过destination服务实时获取（Business Application Studio中的推荐方式）
-      if (destService.uri || destService.url) {
-        console.log(`尝试通过destination服务API获取destination: ${destinationName}`);
-        // 这里可以使用destination服务API获取destination配置
-        // 暂未实现，如果需要在BAS中使用，请考虑实现此部分
+    // 尝试从Destination服务API获取
+    try {
+      console.log(`尝试从Destination服务API获取destination: ${destinationName}`);
+      const dest = await getDestinationFromAPI(destinationName);
+      if (dest) {
+        return dest;
       }
     } catch (error) {
-      console.log('标准方法获取destination失败, 尝试其他方法...', error.message);
+      console.log('从Destination服务API获取失败:', error.message);
     }
     
     // 所有方法都失败，抛出错误
