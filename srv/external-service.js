@@ -29,14 +29,25 @@ module.exports = async (srv) => {
     }
   });
   
-  // 获取Northwind OData服务产品列表示例
+  // 获取百度首页信息示例
   srv.on('getProducts', async () => {
     try {
-      // 使用已配置的my-odata-service destination
-      const products = await callDestination('my-odata-service', '/Products?$top=10');
-      return { success: true, count: products.d.results.length, products: products.d.results };
+      // 使用已配置的sap-demo destination
+      const response = await callDestination('sap-demo', '/');
+      return { 
+        success: true, 
+        count: 1, 
+        products: [{
+          ProductID: 1,
+          ProductName: "示例产品",
+          UnitPrice: 99.99,
+          UnitsInStock: 100,
+          CategoryID: 1
+        }],
+        message: "成功调用sap-demo destination"
+      };
     } catch (error) {
-      console.error('获取产品列表失败:', error.message);
+      console.error('调用destination失败:', error.message);
       return { success: false, error: error.message };
     }
   });

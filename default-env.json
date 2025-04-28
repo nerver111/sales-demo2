@@ -44,22 +44,12 @@
             "instances": [],
             "destinations": [
               {
-                "name": "my-odata-service",
-                "url": "https://services.odata.org/V2/Northwind/Northwind.svc/",
+                "name": "sap-demo",
+                "url": "https://www.baidu.com",
                 "authentication": "NoAuthentication",
                 "proxyType": "Internet",
                 "type": "HTTP",
-                "description": "Northwind OData服务示例"
-              },
-              {
-                "name": "my-erp-system",
-                "url": "https://my-erp-system.example.com",
-                "authentication": "BasicAuthentication",
-                "username": "${vcap.services.credentials-service.credentials.username}",
-                "password": "${vcap.services.credentials-service.credentials.password}",
-                "proxyType": "OnPremise",
-                "type": "HTTP",
-                "description": "ERP系统连接"
+                "description": "示例目标"
               }
             ]
           },
