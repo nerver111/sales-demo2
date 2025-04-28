@@ -25,7 +25,7 @@ async function getDestination(destinationName) {
     throw new Error('必须提供destination名称');
   }
 
-  // 首先检查本地配置
+  // 1. 检查本地配置
   if (destinationService && destinationService.credentials && 
       destinationService.credentials.destinations) {
     
@@ -40,6 +40,30 @@ async function getDestination(destinationName) {
     }
   }
 
+  // 2. 如果本地没有配置，使用BTP云环境destination服务
+  if (destinationService && destinationService.credentials && 
+      destinationService.credentials.uri) {
+    
+    // 在BTP云环境中，我们使用destination服务API
+    // 注：此处仅提供模拟实现，生产系统应使用实际的Destination服务API调用
+    
+    // 对于测试环境，我们提供模拟数据
+    console.log(`使用测试环境的模拟destination配置: ${destinationName}`);
+    
+    // 为不同的destination提供不同的模拟配置
+    if (destinationName === 'sap-demo') {
+      return {
+        name: 'sap-demo',
+        url: 'https://www.baidu.com',
+        authentication: 'NoAuthentication',
+        type: 'HTTP',
+        proxyType: 'Internet'
+      };
+    }
+  }
+
+  // 3. 未找到destination配置
+  console.warn(`未找到destination: ${destinationName}`);
   throw new Error(`未找到名为 ${destinationName} 的destination配置`);
 }
 
@@ -61,7 +85,8 @@ async function callDestination(destinationName, path, options = {}) {
       url,
       method: options.method || 'GET',
       // 允许自签名证书用于开发环境
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      timeout: options.timeout || 30000 // 设置30秒超时
     };
     
     // 处理认证
