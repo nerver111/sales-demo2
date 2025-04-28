@@ -32,23 +32,41 @@ module.exports = async (srv) => {
   // 获取百度首页信息示例
   srv.on('getProducts', async () => {
     try {
+      console.log('开始调用sap-demo destination...');
+      
       // 使用已配置的sap-demo destination
       const response = await callDestination('sap-demo', '/');
+      console.log('成功调用sap-demo destination');
+      
       return { 
         success: true, 
         count: 1, 
         products: [{
           ProductID: 1,
-          ProductName: "示例产品",
+          ProductName: "示例产品 - 成功调用百度",
           UnitPrice: 99.99,
           UnitsInStock: 100,
           CategoryID: 1
         }],
-        message: "成功调用sap-demo destination"
+        message: "成功调用sap-demo destination (百度)"
       };
     } catch (error) {
-      console.error('调用destination失败:', error.message);
-      return { success: false, error: error.message };
+      console.error('调用destination失败:', error);
+      
+      // 返回错误信息，但不中断应用
+      return { 
+        success: false, 
+        error: error.message,
+        count: 1,
+        products: [{
+          ProductID: 999,
+          ProductName: "模拟产品 (Destination调用失败)",
+          UnitPrice: 0,
+          UnitsInStock: 0,
+          CategoryID: 0
+        }],
+        message: `调用失败: ${error.message}`
+      };
     }
   });
 }; 

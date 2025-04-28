@@ -10,6 +10,10 @@ const https = require('https');
 let destinationService;
 try {
   destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
+  console.log('已成功加载destination服务配置:', 
+    destinationService.destinations ? 
+    `找到${destinationService.destinations.length}个destination` : 
+    '未在顶级对象找到destinations');
 } catch (err) {
   console.warn('未找到destination服务配置');
   destinationService = null;
@@ -25,45 +29,29 @@ async function getDestination(destinationName) {
     throw new Error('必须提供destination名称');
   }
 
-  // 1. 检查本地配置
-  if (destinationService && destinationService.credentials && 
-      destinationService.credentials.destinations) {
-    
-    // 在本地配置中查找
-    const localDest = destinationService.credentials.destinations.find(
-      dest => dest.name === destinationName
-    );
-    
-    if (localDest) {
-      console.log(`已找到本地destination配置: ${destinationName}`);
-      return localDest;
+  if (!destinationService) {
+    throw new Error('Destination服务未配置');
+  }
+
+  // 检查destinations是否直接在顶级对象中
+  if (destinationService.destinations && Array.isArray(destinationService.destinations)) {
+    const dest = destinationService.destinations.find(d => d.name === destinationName);
+    if (dest) {
+      console.log(`在顶级destinations中找到destination配置: ${destinationName}`);
+      return dest;
+    }
+  }
+  
+  // 检查是否在credentials下
+  if (destinationService.credentials && destinationService.credentials.destinations) {
+    const dest = destinationService.credentials.destinations.find(d => d.name === destinationName);
+    if (dest) {
+      console.log(`在credentials.destinations中找到destination配置: ${destinationName}`);
+      return dest;
     }
   }
 
-  // 2. 如果本地没有配置，使用BTP云环境destination服务
-  if (destinationService && destinationService.credentials && 
-      destinationService.credentials.uri) {
-    
-    // 在BTP云环境中，我们使用destination服务API
-    // 注：此处仅提供模拟实现，生产系统应使用实际的Destination服务API调用
-    
-    // 对于测试环境，我们提供模拟数据
-    console.log(`使用测试环境的模拟destination配置: ${destinationName}`);
-    
-    // 为不同的destination提供不同的模拟配置
-    if (destinationName === 'sap-demo') {
-      return {
-        name: 'sap-demo',
-        url: 'https://www.baidu.com',
-        authentication: 'NoAuthentication',
-        type: 'HTTP',
-        proxyType: 'Internet'
-      };
-    }
-  }
-
-  // 3. 未找到destination配置
-  console.warn(`未找到destination: ${destinationName}`);
+  // 如果找不到，抛出错误
   throw new Error(`未找到名为 ${destinationName} 的destination配置`);
 }
 
@@ -85,8 +73,7 @@ async function callDestination(destinationName, path, options = {}) {
       url,
       method: options.method || 'GET',
       // 允许自签名证书用于开发环境
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-      timeout: options.timeout || 30000 // 设置30秒超时
+      httpsAgent: new https.Agent({ rejectUnauthorized: false })
     };
     
     // 处理认证
