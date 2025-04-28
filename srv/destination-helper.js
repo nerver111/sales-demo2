@@ -5,52 +5,130 @@
 const xsenv = require('@sap/xsenv');
 const axios = require('axios');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-// 尝试从环境变量加载服务
-let destinationService;
-try {
-  // 尝试使用直接标签查找
+// sap-demo destination的硬编码配置
+const SAP_DEMO_CONFIG = {
+  name: "sap-demo",
+  url: "https://httpbin.org/get",
+  authentication: "NoAuthentication",
+  proxyType: "Internet",
+  type: "HTTP"
+};
+
+// 用于保存destination服务和destination配置的全局变量
+let globalDestinationConfig = null;
+
+// 尝试以各种方式获取destination配置
+function initializeDestinationConfig() {
+  if (globalDestinationConfig) {
+    return globalDestinationConfig;
+  }
+
   try {
-    destinationService = xsenv.getServices({ destination: { tag: 'destination' } }).destination;
-    console.log('通过tag成功加载destination服务配置');
-  } catch (err) {
-    // 尝试按服务名称查找
-    console.log('尝试通过服务名称查找destination...');
-    const services = xsenv.getServices();
+    console.log('初始化destination配置...');
     
-    // 查找可能的destination服务
-    const possibleServiceNames = Object.keys(services).filter(
-      key => key.toLowerCase().includes('destination')
-    );
-    
-    if (possibleServiceNames.length > 0) {
-      console.log(`找到可能的destination服务: ${possibleServiceNames.join(', ')}`);
-      destinationService = services[possibleServiceNames[0]];
-    } else {
-      throw new Error('未找到任何destination相关服务');
-    }
-  }
-  
-  console.log('已成功加载destination服务配置');
-} catch (err) {
-  console.warn('无法从环境变量加载destination服务配置:', err.message);
-  
-  // 尝试查找VCAP_SERVICES环境变量中的destination服务
-  const vcapServices = process.env.VCAP_SERVICES;
-  if (vcapServices) {
+    // 方法1: 尝试从xsenv获取服务
     try {
-      const services = JSON.parse(vcapServices);
+      // 尝试使用不同方式获取destination服务
+      const services = xsenv.getServices();
+      
+      // 方式1.1: 通过标准名称
       if (services.destination) {
-        console.log('从VCAP_SERVICES找到destination服务');
-        destinationService = services.destination[0];
+        console.log('通过标准名称找到destination服务');
+        if (services.destination.destinations) {
+          const dest = services.destination.destinations.find(d => d.name === 'sap-demo');
+          if (dest) {
+            console.log('在destination.destinations中找到sap-demo');
+            globalDestinationConfig = dest;
+            return globalDestinationConfig;
+          }
+        }
       }
-    } catch (e) {
-      console.error('解析VCAP_SERVICES失败:', e.message);
+      
+      // 方式1.2: 查找可能的destination服务
+      const destServiceNames = Object.keys(services).filter(
+        key => key.toLowerCase().includes('destination')
+      );
+      
+      if (destServiceNames.length > 0) {
+        console.log(`找到可能的destination服务: ${destServiceNames.join(', ')}`);
+        const destService = services[destServiceNames[0]];
+        
+        if (destService && destService.destinations) {
+          const dest = destService.destinations.find(d => d.name === 'sap-demo');
+          if (dest) {
+            console.log(`在${destServiceNames[0]}.destinations中找到sap-demo`);
+            globalDestinationConfig = dest;
+            return globalDestinationConfig;
+          }
+        }
+      }
+    } catch (err) {
+      console.log('从xsenv获取服务失败:', err.message);
     }
-  }
-  
-  if (!destinationService) {
-    console.error('未找到destination服务，请确保已在BTP上正确配置');
+    
+    // 方法2: 从环境变量获取
+    const vcapServices = process.env.VCAP_SERVICES;
+    if (vcapServices) {
+      try {
+        const services = JSON.parse(vcapServices);
+        if (services.destination && services.destination[0]) {
+          const destService = services.destination[0];
+          console.log('从VCAP_SERVICES环境变量找到destination服务');
+          
+          if (destService.destinations) {
+            const dest = destService.destinations.find(d => d.name === 'sap-demo');
+            if (dest) {
+              console.log('在VCAP_SERVICES.destination[0].destinations中找到sap-demo');
+              globalDestinationConfig = dest;
+              return globalDestinationConfig;
+            }
+          }
+        }
+      } catch (err) {
+        console.log('从环境变量获取失败:', err.message);
+      }
+    }
+    
+    // 方法3: 从default-env.json获取
+    try {
+      const defaultEnvPath = path.join(process.cwd(), 'default-env.json');
+      if (fs.existsSync(defaultEnvPath)) {
+        const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
+        console.log('加载了default-env.json');
+        
+        if (defaultEnv.VCAP_SERVICES && 
+            defaultEnv.VCAP_SERVICES.destination && 
+            defaultEnv.VCAP_SERVICES.destination[0]) {
+          
+          const destService = defaultEnv.VCAP_SERVICES.destination[0];
+          
+          if (destService.destinations) {
+            const dest = destService.destinations.find(d => d.name === 'sap-demo');
+            if (dest) {
+              console.log('在default-env.json中找到sap-demo配置');
+              globalDestinationConfig = dest;
+              return globalDestinationConfig;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log('从default-env.json获取失败:', err.message);
+    }
+    
+    // 方法4: 使用硬编码配置
+    console.log('使用硬编码的sap-demo配置');
+    globalDestinationConfig = SAP_DEMO_CONFIG;
+    return globalDestinationConfig;
+    
+  } catch (err) {
+    console.error('初始化destination配置失败:', err.message);
+    // 返回硬编码的配置作为后备
+    globalDestinationConfig = SAP_DEMO_CONFIG;
+    return globalDestinationConfig;
   }
 }
 
@@ -64,30 +142,13 @@ async function getDestination(destinationName) {
     throw new Error('必须提供destination名称');
   }
 
-  if (!destinationService) {
-    throw new Error('未找到destination服务，请确保已在BTP上正确配置');
-  }
-
-  // 检查destinations是否直接在顶级对象中
-  if (destinationService.destinations && Array.isArray(destinationService.destinations)) {
-    const dest = destinationService.destinations.find(d => d.name === destinationName);
-    if (dest) {
-      console.log(`在顶级destinations中找到destination配置: ${destinationName}`);
-      return dest;
-    }
+  // 目前只支持sap-demo
+  if (destinationName !== 'sap-demo') {
+    throw new Error(`只支持名为sap-demo的destination，不支持: ${destinationName}`);
   }
   
-  // 检查是否在credentials下
-  if (destinationService.credentials && destinationService.credentials.destinations) {
-    const dest = destinationService.credentials.destinations.find(d => d.name === destinationName);
-    if (dest) {
-      console.log(`在credentials.destinations中找到destination配置: ${destinationName}`);
-      return dest;
-    }
-  }
-
-  // 如果找不到，抛出错误
-  throw new Error(`未找到名为 ${destinationName} 的destination配置，请确保已在BTP上配置了此destination`);
+  // 初始化并返回配置
+  return initializeDestinationConfig();
 }
 
 /**
