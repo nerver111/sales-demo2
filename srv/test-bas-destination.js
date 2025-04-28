@@ -2,8 +2,6 @@
  * SAP BTP Destination 测试脚本
  * 专门用于在SAP Business Application Studio中测试
  */
-const fs = require('fs');
-const path = require('path');
 const { callDestination } = require('./destination-helper');
 
 console.log('=========== SAP BTP Destination 测试 ===========');
@@ -12,26 +10,6 @@ console.log('当前工作目录:', process.cwd());
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('VCAP_SERVICES是否存在:', !!process.env.VCAP_SERVICES);
 console.log('VCAP_APPLICATION是否存在:', !!process.env.VCAP_APPLICATION);
-
-// 确保加载环境变量
-try {
-  // 尝试加载default-env.json
-  console.log('\n检查default-env.json是否存在...');
-  const defaultEnvPath = path.join(process.cwd(), '../default-env.json');
-  const rootDefaultEnvPath = path.join(process.cwd(), 'default-env.json');
-  
-  if (fs.existsSync(defaultEnvPath)) {
-    console.log('在上级目录找到default-env.json:', defaultEnvPath);
-    process.env.DEFAULT_ENV_PATH = defaultEnvPath;
-  } else if (fs.existsSync(rootDefaultEnvPath)) {
-    console.log('在当前目录找到default-env.json:', rootDefaultEnvPath);
-    process.env.DEFAULT_ENV_PATH = rootDefaultEnvPath;
-  } else {
-    console.log('未找到default-env.json文件');
-  }
-} catch (err) {
-  console.error('初始化环境变量失败:', err.message);
-}
 
 async function testDestination() {
   try {

@@ -6,49 +6,9 @@
 const xsenv = require('@sap/xsenv');
 const axios = require('axios');
 const https = require('https');
-const fs = require('fs');
-const path = require('path');
 
 // 用于保存destination配置的全局变量
 let destinationConfigs = null;
-
-// 从default-env.json直接读取destination配置
-function getDestinationDirectly(destinationName) {
-  try {
-    // 查找default-env.json
-    const rootPath = path.join(__dirname, '..');
-    const defaultEnvPath = path.join(rootPath, 'default-env.json');
-    
-    if (!fs.existsSync(defaultEnvPath)) {
-      throw new Error(`找不到文件: ${defaultEnvPath}`);
-    }
-    
-    // 读取配置
-    const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
-    
-    // 检查destination配置
-    if (!defaultEnv.VCAP_SERVICES || 
-        !defaultEnv.VCAP_SERVICES.destination || 
-        !defaultEnv.VCAP_SERVICES.destination[0] ||
-        !defaultEnv.VCAP_SERVICES.destination[0].destinations) {
-      throw new Error('文件中没有正确的destination配置');
-    }
-    
-    // 查找指定名称的destination
-    const destinations = defaultEnv.VCAP_SERVICES.destination[0].destinations;
-    const destination = destinations.find(d => d.name === destinationName);
-    
-    if (!destination) {
-      throw new Error(`找不到名为${destinationName}的destination配置`);
-    }
-    
-    console.log(`在default-env.json中找到destination: ${destinationName}`);
-    return destination;
-  } catch (error) {
-    console.error('直接获取destination配置失败:', error.message);
-    throw error;
-  }
-}
 
 // 获取destination服务和配置
 function getDestinationService() {
@@ -132,26 +92,6 @@ function getDestinationService() {
       }
     }
     
-    // 方法3: 从default-env.json获取
-    try {
-      const defaultEnvPath = path.join(process.cwd(), 'default-env.json');
-      if (fs.existsSync(defaultEnvPath)) {
-        const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
-        console.log('加载了default-env.json');
-        
-        if (defaultEnv.VCAP_SERVICES && 
-            defaultEnv.VCAP_SERVICES.destination && 
-            defaultEnv.VCAP_SERVICES.destination[0]) {
-          
-          console.log('从default-env.json找到destination服务');
-          destinationConfigs = defaultEnv.VCAP_SERVICES.destination[0];
-          return destinationConfigs;
-        }
-      }
-    } catch (err) {
-      console.log('从default-env.json获取失败:', err.message);
-    }
-    
     console.error('无法获取destination服务配置，请确保已在BTP上正确配置服务');
     throw new Error('未找到destination服务配置');
     
@@ -207,54 +147,6 @@ async function getDestination(destinationName) {
       }
     } catch (error) {
       console.log('标准方法获取destination失败, 尝试其他方法...', error.message);
-    }
-    
-    // 直接检查default-env.json
-    try {
-      // 先检查当前目录下的default-env.json
-      const defaultEnvPath = path.join(process.cwd(), 'default-env.json');
-      if (fs.existsSync(defaultEnvPath)) {
-        const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
-        
-        if (defaultEnv.VCAP_SERVICES && 
-            defaultEnv.VCAP_SERVICES.destination && 
-            defaultEnv.VCAP_SERVICES.destination[0] &&
-            defaultEnv.VCAP_SERVICES.destination[0].destinations) {
-          
-          const dest = defaultEnv.VCAP_SERVICES.destination[0].destinations.find(d => d.name === destinationName);
-          if (dest) {
-            console.log(`在当前目录的default-env.json中直接找到destination: ${destinationName}`);
-            return dest;
-          }
-        }
-      }
-      
-      // 再检查上级目录下的default-env.json
-      const rootDefaultEnvPath = path.join(process.cwd(), '..', 'default-env.json');
-      if (fs.existsSync(rootDefaultEnvPath)) {
-        const defaultEnv = JSON.parse(fs.readFileSync(rootDefaultEnvPath, 'utf8'));
-        
-        if (defaultEnv.VCAP_SERVICES && 
-            defaultEnv.VCAP_SERVICES.destination && 
-            defaultEnv.VCAP_SERVICES.destination[0] &&
-            defaultEnv.VCAP_SERVICES.destination[0].destinations) {
-          
-          const dest = defaultEnv.VCAP_SERVICES.destination[0].destinations.find(d => d.name === destinationName);
-          if (dest) {
-            console.log(`在上级目录的default-env.json中直接找到destination: ${destinationName}`);
-            return dest;
-          }
-        }
-      }
-    } catch (err) {
-      console.log('从default-env.json查找destination失败:', err.message);
-    }
-    
-    // 如果标准方法失败，尝试直接读取
-    try {
-      return getDestinationDirectly(destinationName);
-    } catch (error) {
-      console.log('直接读取destination失败:', error.message);
     }
     
     // 所有方法都失败，抛出错误

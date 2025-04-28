@@ -89,40 +89,7 @@ try {
   console.error('方法1出错:', err.message);
 }
 
-// 方法2: 从default-env.json尝试获取
-if (!foundDestination) {
-  try {
-    console.log('\n尝试从default-env.json获取destination...');
-    const fs = require('fs');
-    const path = require('path');
-    
-    // 尝试加载default-env.json
-    const defaultEnvPath = path.join(process.cwd(), 'default-env.json');
-    if (fs.existsSync(defaultEnvPath)) {
-      const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf8'));
-      console.log('成功加载default-env.json');
-      
-      if (defaultEnv && defaultEnv.VCAP_SERVICES && defaultEnv.VCAP_SERVICES.destination) {
-        const destService = defaultEnv.VCAP_SERVICES.destination[0];
-        console.log('在default-env.json中找到destination服务');
-        
-        if (destService.destinations && Array.isArray(destService.destinations)) {
-          const dest = destService.destinations.find(d => d.name === 'sap-demo');
-          if (dest) {
-            console.log('在default-env.json中找到sap-demo配置');
-            foundDestination = dest;
-          }
-        }
-      }
-    } else {
-      console.log('default-env.json文件不存在');
-    }
-  } catch (err) {
-    console.error('方法2出错:', err.message);
-  }
-}
-
-// 方法3: 使用硬编码的配置进行测试
+// 方法2: 使用硬编码的配置进行测试
 if (!foundDestination) {
   console.log('\n未找到destination配置，使用硬编码配置进行测试');
   foundDestination = {
