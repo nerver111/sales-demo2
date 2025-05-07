@@ -112,7 +112,7 @@ async function testMyInternalApi() {
     console.log('测试目标destination名称: my-internal-api (GET)');
 
     // 尝试GET调用 my-internal-api destination
-    const result = await callDestination('my-internal-api', '', {
+    const result = await callDestination('my-internal-api', '/api/products', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
