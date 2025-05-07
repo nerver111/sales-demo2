@@ -73,12 +73,89 @@ async function testDestination() {
   }
 }
 
+// 新增：测试sap-demo-post destination的POST请求
+async function testDestinationPost() {
+  try {
+    console.log('\n开始测试destination服务...');
+    console.log('测试目标destination名称: sap-demo-post (POST)');
+    
+    // 尝试POST调用sap-demo-post destination
+    const result = await callDestination('sap-demo-post', '', {
+      method: 'POST',
+      data: { foo: 'bar', time: new Date().toISOString() },
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    console.log('POST调用完成!');
+    console.log('响应内容类型:', typeof result);
+    if (typeof result === 'object') {
+      console.log('POST响应对象概览:', JSON.stringify(result).substring(0, 200) + '...');
+    } else if (typeof result === 'string') {
+      console.log('POST响应字符串预览:', result.substring(0, 200) + '...');
+    } else {
+      console.log('POST响应内容:', result);
+    }
+    return true;
+  } catch (error) {
+    console.error('\nPOST测试失败:', error.message);
+    if (error.stack) {
+      console.error('POST错误堆栈:', error.stack);
+    }
+    return false;
+  }
+}
+
+// 新增：测试 my-internal-api destination 的 GET 请求
+async function testMyInternalApi() {
+  try {
+    console.log('\n开始测试本地 my-internal-api destination...');
+    console.log('测试目标destination名称: my-internal-api (GET)');
+
+    // 尝试GET调用 my-internal-api destination
+    const result = await callDestination('my-internal-api', '', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    console.log('GET调用完成!');
+    console.log('响应内容类型:', typeof result);
+    if (typeof result === 'object') {
+      console.log('GET响应对象概览:', JSON.stringify(result).substring(0, 200) + '...');
+    } else if (typeof result === 'string') {
+      console.log('GET响应字符串预览:', result.substring(0, 200) + '...');
+    } else {
+      console.log('GET响应内容:', result);
+    }
+    return true;
+  } catch (error) {
+    console.error('\nGET测试失败:', error.message);
+    if (error.stack) {
+      console.error('GET错误堆栈:', error.stack);
+    }
+    return false;
+  }
+}
+
 // 执行测试
 testDestination()
   .then(success => {
     console.log('\n=========== 测试结果 ===========');
-    console.log(success ? '✅ 测试成功!' : '❌ 测试失败!');
+    console.log(success ? '✅ sap-demo 测试成功!' : '❌ sap-demo 测试失败!');
     console.log('===============================');
+    // 测试POST
+    return testDestinationPost();
+  })
+  .then(success => {
+    console.log('\n=========== POST测试结果 ===========');
+    console.log(success ? '✅ sap-demo-post 测试成功!' : '❌ sap-demo-post 测试失败!');
+    console.log('===================================');
+    // 新增：测试 my-internal-api
+    return testMyInternalApi();
+  })
+  .then(success => {
+    console.log('\n=========== my-internal-api 测试结果 ===========');
+    console.log(success ? '✅ my-internal-api 测试成功!' : '❌ my-internal-api 测试失败!');
+    console.log('===============================================');
   })
   .catch(err => {
     console.error('\n=========== 测试异常 ===========');
