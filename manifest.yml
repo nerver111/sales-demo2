@@ -1,0 +1,8 @@
+---
+applications:
+  - name: sales-demo2
+    path: .
+    memory: 256M
+    buildpacks:
+      - nodejs_buildpack
+    command: npm start 
