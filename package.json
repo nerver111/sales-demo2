@@ -28,6 +28,7 @@
     "watch": "cds watch --no-auth",
     "watch:with-auth": "cds watch",
     "deploy": "cds deploy --to sqlite",
+    "test": "jest",
     "init": "cds deploy --to sqlite --with-mocks"
   },
   "cds": {
