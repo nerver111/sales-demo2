@@ -209,3 +209,10 @@ testDestination()
     console.error('测试过程中发生未捕获错误:', err);
     console.error('================================');
   }); 
+
+  module.exports = {
+    testDestination,
+    testDestinationPost,
+    testMyInternalApi,
+    testMyInternalApiWithSdk
+  };
