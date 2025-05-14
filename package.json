@@ -13,12 +13,13 @@
     "@sap/xssec": "^3.6.2",
     "axios": "^1.9.0",
     "body-parser": "^1.20.3",
+    "exceljs": "^4.4.0",
     "express": "^4",
     "express-session": "^1.18.1",
     "https": "^1.0.0",
+    "jest": "^29.0.0",
     "passport": "^0.6.0",
-    "sqlite3": "^5.1.7",
-    "jest": "^29.0.0"
+    "sqlite3": "^5.1.7"
   },
   "scripts": {
     "start": "node srv/test-bas-destination.js",
