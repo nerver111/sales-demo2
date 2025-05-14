@@ -176,6 +176,42 @@ async function testMyInternalApiWithSdk() {
   }
 }
 
+// 新增：使用 SAP Cloud SDK 方式测试 SERVICE_B_DEST destination 的 GET 请求
+async function testServiceBDestWithSdk() {
+  try {
+    console.log('\n开始测试 SERVICE_B_DEST destination (SAP Cloud SDK)...');
+    console.log('测试目标destination名称: SERVICE_B_DEST (GET, SDK)');
+
+    // 获取 destination
+    const destination = await getDestination({ destinationName: 'SERVICE_B_DEST' });
+    if (!destination) {
+      throw new Error('未能获取到 SERVICE_B_DEST destination');
+    }
+    // 通过 Cloud SDK 发起请求
+    const response = await executeHttpRequest(destination, {
+      method: 'get',
+      url: '/api/hello' // 你可以根据实际需要修改为具体的 path
+    });
+
+    console.log('SDK GET调用完成!');
+    console.log('响应内容类型:', typeof response.data);
+    if (typeof response.data === 'object') {
+      console.log('SDK GET响应对象概览:', JSON.stringify(response.data).substring(0, 200) + '...');
+    } else if (typeof response.data === 'string') {
+      console.log('SDK GET响应字符串预览:', response.data.substring(0, 200) + '...');
+    } else {
+      console.log('SDK GET响应内容:', response.data);
+    }
+    return true;
+  } catch (error) {
+    console.error('\nSDK GET测试失败:', error.message);
+    if (error.stack) {
+      console.error('SDK GET错误堆栈:', error.stack);
+    }
+    return false;
+  }
+}
+
 // 执行测试
 testDestination()
   .then(success => {
@@ -203,6 +239,13 @@ testDestination()
     console.log('\n=========== my-internal-api (SAP Cloud SDK) 测试结果 ===========');
     console.log(success ? '✅ my-internal-api (SDK) 测试成功!' : '❌ my-internal-api (SDK) 测试失败!');
     console.log('==============================================================');
+    // 新增：测试 SERVICE_B_DEST
+    return testServiceBDestWithSdk();
+  })
+  .then(success => {
+    console.log('\n=========== SERVICE_B_DEST (SAP Cloud SDK) 测试结果 ===========');
+    console.log(success ? '✅ SERVICE_B_DEST (SDK) 测试成功!' : '❌ SERVICE_B_DEST (SDK) 测试失败!');
+    console.log('==============================================================');
   })
   .catch(err => {
     console.error('\n=========== 测试异常 ===========');
@@ -214,5 +257,6 @@ testDestination()
     testDestination,
     testDestinationPost,
     testMyInternalApi,
-    testMyInternalApiWithSdk
+    testMyInternalApiWithSdk,
+    testServiceBDestWithSdk
   };
