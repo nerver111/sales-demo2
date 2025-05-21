@@ -19,7 +19,7 @@
             "subaccountid": "377277a3-0e38-4219-8c63-12f514e5a58e",
             "zoneid": "377277a3-0e38-4219-8c63-12f514e5a58e",
             "credential-type": "binding-secret",
-            "serviceInstanceId": "efb9dff4-a3e6-48f8-a355-27bb413381a0",
+            "serviceInstanceId": "efb9dff4-a3e6-48f8-a355-27bb413381a0"
           },
           "instance_name": "XSUAA-demo",
           "label": "xsuaa",
