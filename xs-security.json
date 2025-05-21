@@ -13,7 +13,11 @@
     {
       "name": "$XSAPPNAME.admin",
       "description": "管理员权限"
-    }
+    },
+    { "name": "$XSAPPNAME.ViewAllNKAPlans", "description": "查看所有NKA年度计划" },
+    { "name": "$XSAPPNAME.ViewHyperPlans", "description": "查看所有Hyper年度计划" },
+    { "name": "$XSAPPNAME.ViewMiniPlans", "description": "查看所有Mini年度计划" },
+    { "name": "$XSAPPNAME.ViewOwnPlans", "description": "查看和编辑自己负责的年度计划" }
   ],
   "attributes": [
     {
@@ -59,7 +63,11 @@
         "$XSAPPNAME.editor",
         "$XSAPPNAME.admin"
       ]
-    }
+    },
+    { "name": "NKA_Manager", "description": "NKA总经理", "scope-references": [ "$XSAPPNAME.ViewAllNKAPlans" ] },
+    { "name": "Hyper_Manager", "description": "Hyper部门经理", "scope-references": [ "$XSAPPNAME.ViewHyperPlans" ] },
+    { "name": "Mini_Manager", "description": "Mini部门经理", "scope-references": [ "$XSAPPNAME.ViewMiniPlans" ] },
+    { "name": "Sales_Rep", "description": "部门销售员", "scope-references": [ "$XSAPPNAME.ViewOwnPlans" ] }
   ],
   "role-collections": [
     {
@@ -82,6 +90,10 @@
       "role-template-references": [
         "$XSAPPNAME.SalesAdmin"
       ]
-    }
+    },
+    { "name": "NKA_Manager_Collection", "description": "NKA总经理角色集合", "role-template-references": [ "$XSAPPNAME.NKA_Manager" ] },
+    { "name": "Hyper_Manager_Collection", "description": "Hyper部门经理角色集合", "role-template-references": [ "$XSAPPNAME.Hyper_Manager" ] },
+    { "name": "Mini_Manager_Collection", "description": "Mini部门经理角色集合", "role-template-references": [ "$XSAPPNAME.Mini_Manager" ] },
+    { "name": "Sales_Rep_Collection", "description": "部门销售员角色集合", "role-template-references": [ "$XSAPPNAME.Sales_Rep" ] }
   ]
 } 
