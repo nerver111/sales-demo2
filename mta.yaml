@@ -23,7 +23,6 @@ modules:
     requires:
       - name: XSUAA-demo
       - name: sap-demo
-      - name: salesplan-db
 resources:
   - name: XSUAA-demo
     type: org.cloudfoundry.managed-service
