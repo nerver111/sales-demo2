@@ -1,0 +1,10 @@
+{
+    "name": "srv-api",
+    "version": "1.0.0",
+    "scripts": {
+      "start": "cds run"
+    },
+    "dependencies": {
+      "@sap/cds": "^7"
+    }
+  }
