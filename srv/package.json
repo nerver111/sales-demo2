@@ -5,6 +5,10 @@
       "start": "cds run"
     },
     "dependencies": {
-      "@sap/cds": "^7"
+      "@sap/cds": "^7",
+      "@sap/cds-dk": "^7"
+    },
+    "engines": {
+      "node": ">=18.0.0"
     }
   }
