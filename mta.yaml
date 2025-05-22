@@ -11,8 +11,8 @@ modules:
         - npm install
         - npm run build
     requires:
-      - name: salesplan-xsuaa
-      - name: salesplan-destination
+      - name: XSUAA-demo
+      - name: sap-demo
       - name: srv-api
   - name: srv-api
     type: nodejs
@@ -21,23 +21,18 @@ modules:
       disk-quota: 512M
       memory: 512M
     requires:
-      - name: salesplan-xsuaa
-      - name: salesplan-destination
+      - name: XSUAA-demo
+      - name: sap-demo
       - name: salesplan-db
 resources:
-  - name: salesplan-xsuaa
+  - name: XSUAA-demo
     type: org.cloudfoundry.managed-service
     parameters:
       service: xsuaa
       service-plan: application
       path: ./xs-security.json
-  - name: salesplan-destination
+  - name: sap-demo
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
-  - name: salesplan-db
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: hana
-      service-plan: hdi-shared 
